@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "battlerps-arena",
+  "builds": [
+    {
+      "src": "**/*",
+      "use": "@vercel/static"
+    }
+  ]
+}
