@@ -113,6 +113,31 @@ header {
     display: none; /* Hide current selection from dropdown */
 }
 
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.music-btn {
+    background: var(--surface-container-low);
+    border: none;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+}
+
+.music-btn:hover { transform: scale(1.1); }
+
+/* Old dropdown/balance styles below */
 .balance-chip {
     background: var(--surface-container-low);
     padding: 8px 16px;

@@ -19,10 +19,18 @@
                 <button class="lang-btn" data-lang="pt">🇵🇹 Português</button>
             </div>
         </div>
-        <div class="balance-chip">
-            <span id="user-balance">0.00</span> <span>USDC</span>
+        
+        <div class="header-right">
+            <button id="music-toggle" class="music-btn">🔊</button>
+            <div class="balance-chip">
+                <span id="user-balance">0.00</span> <span>USDC</span>
+            </div>
         </div>
     </header>
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://cdn.pixabay.com/audio/2022/03/10/audio_c8c8a73456.mp3" type="audio/mpeg">
+    </audio>
 
     <main>
         <h1 class="game-title" data-i18n="game-title">Battle!</h1>
