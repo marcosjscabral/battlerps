@@ -75,6 +75,7 @@ const translations = {
     }
 };
 
+const langEmojis = { en: '🇺🇸', es: '🇪🇸', pt: '🇵🇹' };
 let currentLang = localStorage.getItem('battlerps-lang') || 'en';
 
 const config = {
@@ -102,6 +103,8 @@ const elP2Status = document.getElementById('p2-status');
 const overlay = document.getElementById('animation-overlay');
 const h1 = document.getElementById('p1-anim-hand');
 const h2 = document.getElementById('p2-anim-hand');
+const elLangTrigger = document.getElementById('lang-current');
+const elLangDropdown = document.getElementById('lang-dropdown');
 
 async function init() {
     applyLanguage(currentLang);
@@ -125,6 +128,8 @@ async function init() {
 function applyLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('battlerps-lang', lang);
+    elLangTrigger.textContent = langEmojis[lang];
+    elLangDropdown.classList.remove('active'); // Close menu
     
     const dic = translations[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -134,16 +139,20 @@ function applyLanguage(lang) {
         }
     });
 
-    // Handle dynamic parts
-    if (phase === 'COMMIT') elPhase.textContent = dic['phase-committing'];
-    if (phase === 'REVEAL') elPhase.textContent = dic['phase-reveal'];
-    if (phase === 'BATTLE') elPhase.textContent = dic['phase-battle'];
-    if (phase === 'RESULT') elPhase.textContent = dic['phase-over'];
+    // Update dynamic elements
+    updatePhaseText();
 
-    // Update active flag
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.lang === lang);
     });
+}
+
+function updatePhaseText() {
+    const dic = translations[currentLang];
+    if (phase === 'COMMIT') elPhase.textContent = dic['phase-committing'];
+    else if (phase === 'REVEAL') elPhase.textContent = dic['phase-reveal'];
+    else if (phase === 'BATTLE') elPhase.textContent = dic['phase-battle'];
+    else if (phase === 'RESULT') elPhase.textContent = dic['phase-over'];
 }
 
 function updateBalance(newBalance) {
@@ -184,7 +193,7 @@ function selectMove(move, btn) {
         elP2Status.style.color = 'var(--secondary)';
         
         phase = 'REVEAL';
-        elPhase.textContent = dic['phase-reveal'];
+        updatePhaseText();
         
         // Hide selection grid
         document.getElementById('move-controls').classList.add('hidden');
@@ -197,7 +206,7 @@ function selectMove(move, btn) {
 function reveal() {
     const dic = translations[currentLang];
     phase = 'BATTLE';
-    elPhase.textContent = dic['phase-battle'];
+    updatePhaseText();
     
     // Start Animation Sequence
     overlay.classList.remove('hidden');
@@ -269,7 +278,7 @@ function determineWinner(p1, p2) {
 function showResult(result, payout) {
     const dic = translations[currentLang];
     phase = 'RESULT';
-    elPhase.textContent = dic['phase-over'];
+    updatePhaseText();
     elResultArea.classList.remove('hidden');
     elWinnerText.textContent = result.name;
     
@@ -291,7 +300,21 @@ document.querySelectorAll('.rps-btn').forEach(btn => {
 });
 
 document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.onclick = () => applyLanguage(btn.dataset.lang);
+    btn.onclick = (e) => {
+        e.stopPropagation();
+        applyLanguage(btn.dataset.lang);
+    };
+});
+
+// Dropdown Toggle
+elLangTrigger.onclick = (e) => {
+    e.stopPropagation();
+    elLangDropdown.classList.toggle('active');
+};
+
+// Close dropdown on outside click
+document.addEventListener('click', () => {
+    elLangDropdown.classList.remove('active');
 });
 
 document.getElementById('new-match-btn').onclick = () => {
@@ -299,7 +322,7 @@ document.getElementById('new-match-btn').onclick = () => {
     document.getElementById('move-controls').classList.remove('hidden');
     elResultArea.classList.add('hidden');
     phase = 'COMMIT';
-    elPhase.textContent = dic['phase-committing'];
+    updatePhaseText();
     elP1Status.textContent = dic['awaiting'];
     elP1Status.style.color = 'var(--on-surface-variant)';
     elP2Status.textContent = dic['thinking'];
