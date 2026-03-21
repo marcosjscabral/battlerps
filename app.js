@@ -97,7 +97,6 @@ const elPhase = document.getElementById('phase-chip');
 const elReconMsg = document.getElementById('recon-msg');
 const elResultBanner = document.getElementById('result-banner');
 const elWinnerText = document.getElementById('winner-text');
-const elWinnerAmount = document.getElementById('winner-amount');
 const elP1Status = document.getElementById('p1-status');
 const elP2Status = document.getElementById('p2-status');
 const overlay = document.getElementById('animation-overlay');
@@ -112,24 +111,19 @@ const elSfxReveal = document.getElementById('sfx-reveal');
 
 async function init() {
     applyLanguage(currentLang);
-    
-    // Check music preference
     const isMuted = localStorage.getItem('battlerps-muted') === 'true';
     if (isMuted) {
         elMusic.muted = true;
         elMusicBtn.textContent = '🔇';
     }
 
-    // Fetch initial balance
-    const { data, error } = await db
+    const { data } = await db
         .from('user_profiles')
         .select('balance')
         .eq('wallet_address', currentWallet)
         .single();
-    
-    if (data) {
-        updateBalance(data.balance);
-    } else {
+    if (data) updateBalance(data.balance);
+    else {
         await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1500.00 }]);
         updateBalance(1500.00);
     }
@@ -147,10 +141,7 @@ function toggleMusic() {
     elMusic.muted = isMuted;
     localStorage.setItem('battlerps-muted', isMuted);
     elMusicBtn.textContent = isMuted ? '🔇' : '🔊';
-    
-    if (!isMuted && elMusic.paused) {
-        elMusic.play().catch(console.warn);
-    }
+    if (!isMuted && elMusic.paused) elMusic.play().catch(console.warn);
 }
 
 function applyLanguage(lang) {
@@ -162,16 +153,10 @@ function applyLanguage(lang) {
     const dic = translations[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (dic[key]) {
-            el.textContent = dic[key];
-        }
+        if (dic[key]) el.textContent = dic[key];
     });
-
     updatePhaseText();
-
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.lang === lang);
-    });
+    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
 }
 
 function updatePhaseText() {
@@ -187,32 +172,32 @@ function updateBalance(newBalance) {
     elBalance.textContent = balance.toFixed(2);
 }
 
-async function syncBalanceToSupabase(newBalance) {
-    await db
-        .from('user_profiles')
-        .update({ balance: newBalance })
-        .eq('wallet_address', currentWallet);
+function triggerFloatingPayout(amount, type) {
+    const float = document.createElement('div');
+    float.className = 'floating-payout';
+    float.textContent = (amount > 0 ? '+' : '') + amount.toFixed(2) + ' USDC';
+    float.classList.add(type === 'win' ? 'text-win' : 'text-loss');
+    
+    // Position at result banner area
+    float.style.left = '50%';
+    float.style.top = '45%';
+    document.body.appendChild(float);
+    
+    setTimeout(() => float.remove(), 1200);
 }
 
-async function saveMatchToSupabase(matchData) {
-    await db
-        .from('matches')
-        .insert([matchData]);
+async function syncBalanceToSupabase(newBalance) {
+    await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
 }
 
 function selectMove(move, btn) {
     if (phase !== 'COMMIT') return;
-
-    if (!elMusic.muted && elMusic.paused) {
-        elMusic.play().catch(console.warn);
-    }
+    if (!elMusic.muted && elMusic.paused) elMusic.play().catch(console.warn);
     
     myMove = move;
     const dic = translations[currentLang];
-
     document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
-    
     elP1Status.textContent = dic['locked'];
     elP1Status.style.color = 'var(--primary)';
     
@@ -220,13 +205,10 @@ function selectMove(move, btn) {
         botMove = ['rock', 'paper', 'scissors'][Math.floor(Math.random() * 3)];
         elP2Status.textContent = dic['ready'];
         elP2Status.style.color = 'var(--secondary)';
-        
         phase = 'REVEAL';
         updatePhaseText();
-        
         document.getElementById('move-controls').style.pointerEvents = 'none';
         document.getElementById('move-controls').style.opacity = '0.5';
-        
         setTimeout(reveal, 500); 
     }, 400);
 }
@@ -234,14 +216,11 @@ function selectMove(move, btn) {
 function reveal() {
     phase = 'BATTLE';
     updatePhaseText();
-    
     overlay.classList.remove('hidden');
     h1.textContent = '✊';
     h2.textContent = '✊';
     h1.style.animation = 'hand-bounce-p1 0.4s ease-in-out infinite';
     h2.style.animation = 'hand-bounce-p2 0.4s ease-in-out infinite';
-
-    // SFX Bounces (3 times)
     playSfx(elSfxBounce);
     setTimeout(() => playSfx(elSfxBounce), 400);
     setTimeout(() => playSfx(elSfxBounce), 800);
@@ -251,10 +230,7 @@ function reveal() {
         h2.style.animation = 'none';
         h1.textContent = moveEmojis[myMove];
         h2.textContent = moveEmojis[botMove];
-        
-        // SFX Reveal
         playSfx(elSfxReveal);
-        
         setTimeout(() => {
             overlay.classList.add('hidden');
             processPayout();
@@ -264,67 +240,54 @@ function reveal() {
 
 function processPayout() {
     elReconMsg.classList.remove('hidden');
-    
     setTimeout(async () => {
         const result = determineWinner(myMove, botMove);
         elReconMsg.classList.add('hidden');
         
         let newBalance = balance;
-        let payout = 0;
+        let diff = 0;
         if (result.winner === 1) {
-            payout = config.stake * result.mult;
-            newBalance = balance + (payout - config.stake);
+            const payout = config.stake * result.mult;
+            diff = payout - config.stake;
+            newBalance = balance + diff;
+            triggerFloatingPayout(payout, 'win');
         } else if (result.winner === 2) {
-            newBalance = balance - config.stake;
+            diff = -config.stake;
+            newBalance = balance + diff;
+            triggerFloatingPayout(diff, 'loss');
         }
 
-        updateBalance(newBalance);
-        await syncBalanceToSupabase(newBalance);
-        await saveMatchToSupabase({
-            player_move: myMove,
-            bot_move: botMove,
-            outcome: result.name,
-            stake: config.stake,
-            payout: payout
-        });
+        setTimeout(async () => {
+            updateBalance(newBalance);
+            await syncBalanceToSupabase(newBalance);
+            await db.from('matches').insert([{
+                player_move: myMove, bot_move: botMove, outcome: result.name,
+                stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0
+            }]);
+        }, 800); // Update balance when floating reaches target
 
-        showResult(result, payout);
+        showResult(result);
     }, 1200);
 }
 
 function determineWinner(p1, p2) {
     const dic = translations[currentLang];
     if (p1 === p2) return { name: dic['draw'], winner: 0, mult: 1 };
-    if (
-        (p1 === 'rock' && p2 === 'scissors') ||
-        (p1 === 'paper' && p2 === 'rock') ||
-        (p1 === 'scissors' && p2 === 'paper')
-    ) {
+    if ((p1 === 'rock' && p2 === 'scissors') || (p1 === 'paper' && p2 === 'rock') || (p1 === 'scissors' && p2 === 'paper'))
         return { name: dic['win'], winner: 1, mult: 1.95 };
-    }
     return { name: dic['loss'], winner: 2, mult: 0 };
 }
 
-function showResult(result, payout) {
-    const dic = translations[currentLang];
+function showResult(result) {
     phase = 'RESULT';
     updatePhaseText();
     elResultBanner.classList.remove('hidden');
     elWinnerText.textContent = result.name;
     
-    if (result.winner === 1) {
-        elWinnerText.style.color = 'var(--primary)';
-        elWinnerAmount.textContent = `+${payout.toFixed(2)} USDC`;
-        elResultBanner.style.borderColor = 'var(--primary-container)';
-    } else if (result.winner === 2) {
-        elWinnerText.style.color = '#b31b25';
-        elWinnerAmount.textContent = `-${config.stake.toFixed(2)} USDC`;
-        elResultBanner.style.borderColor = '#ffcdd2';
-    } else {
-        elWinnerText.style.color = 'var(--tertiary)';
-        elWinnerAmount.textContent = dic['refund'];
-        elResultBanner.style.borderColor = 'var(--surface-container-low)';
-    }
+    elWinnerText.className = ''; // reset classes
+    if (result.winner === 1) elWinnerText.classList.add('text-win');
+    else if (result.winner === 2) elWinnerText.classList.add('text-loss');
+    else elWinnerText.classList.add('text-draw');
 
     setTimeout(resetMatch, 3000);
 }
@@ -332,11 +295,9 @@ function showResult(result, payout) {
 function resetMatch() {
     const dic = translations[currentLang];
     elResultBanner.classList.add('hidden');
-    
     document.getElementById('move-controls').style.pointerEvents = 'auto';
     document.getElementById('move-controls').style.opacity = '1';
     document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
-    
     phase = 'COMMIT';
     updatePhaseText();
     elP1Status.textContent = dic['awaiting'];
@@ -346,29 +307,10 @@ function resetMatch() {
 }
 
 // Events
-document.querySelectorAll('.rps-btn').forEach(btn => {
-    btn.onclick = () => selectMove(btn.dataset.move, btn);
-});
-
-document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.onclick = (e) => {
-        e.stopPropagation();
-        applyLanguage(btn.dataset.lang);
-    };
-});
-
-elLangTrigger.onclick = (e) => {
-    e.stopPropagation();
-    elLangDropdown.classList.toggle('active');
-};
-
-elMusicBtn.onclick = (e) => {
-    e.stopPropagation();
-    toggleMusic();
-};
-
-document.addEventListener('click', () => {
-    elLangDropdown.classList.remove('active');
-});
+document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
+document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
+elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };
+elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
+document.addEventListener('click', () => elLangDropdown.classList.remove('active'));
 
 init();

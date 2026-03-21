@@ -313,14 +313,35 @@ main {
 
 .result-banner h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 800;
 }
 
-.result-banner p {
-    margin: 5px 0 0;
-    font-weight: 700;
-    color: var(--on-surface-variant);
+/* Win/Loss Colors */
+.text-win { color: #2e7d32 !important; } /* Emerald Green */
+.text-loss { color: #c62828 !important; }
+.text-draw { color: var(--tertiary); }
+
+/* Floating Payout Animation */
+.floating-payout {
+    position: fixed;
+    z-index: 9999;
+    font-weight: 800;
+    font-size: 20px;
+    pointer-events: none;
+    animation: floatToWallet 1.2s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards;
+}
+
+@keyframes floatToWallet {
+    0% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+    20% { opacity: 1; transform: translate(-50%, -100%) scale(1.2); }
+    100% { 
+        top: 30px; 
+        right: 40px; 
+        left: auto;
+        transform: translate(0, 0) scale(0.5); 
+        opacity: 0; 
+    }
 }
 
 .battle-btn {
