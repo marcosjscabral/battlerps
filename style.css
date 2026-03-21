@@ -45,6 +45,27 @@ header {
     letter-spacing: -1px;
 }
 
+.lang-selector {
+    display: flex;
+    gap: 12px;
+}
+
+.lang-btn {
+    background: transparent;
+    border: 2px solid transparent;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 8px;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.lang-btn:hover { transform: scale(1.2); }
+.lang-btn.active {
+    background: var(--surface-container-low);
+    border-color: var(--primary-container);
+}
+
 .balance-chip {
     background: var(--surface-container-low);
     padding: 8px 16px;
