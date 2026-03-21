@@ -245,16 +245,16 @@ main {
     z-index: 100;
 }
 
-#p1-anim-hand { transform: rotate(90deg); }
-#p2-anim-hand { transform: rotate(-90deg); }
+#p1-anim-hand { --rot: 90deg; transform: rotate(var(--rot)); }
+#p2-anim-hand { --rot: -90deg; transform: rotate(var(--rot)); }
 
 @keyframes hand-bounce-p1 { 
     0%, 100% { transform: rotate(90deg) translateY(0); } 
-    50% { transform: rotate(90deg) translateY(-50px); } 
+    50% { transform: rotate(90deg) translateY(-60px); } 
 }
 @keyframes hand-bounce-p2 { 
     0%, 100% { transform: rotate(-90deg) translateY(0); } 
-    50% { transform: rotate(-90deg) translateY(-50px); } 
+    50% { transform: rotate(-90deg) translateY(-60px); } 
 }
 
 /* Result Modal */
