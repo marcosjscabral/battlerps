@@ -1,0 +1,43 @@
+# State Reconciliation Flow for `process_payout()`
+# This logic is executed by the Antigravity Reconciler (AR)
+
+reconciliation_flow:
+  name: process_payout_reconciliation
+  trigger:
+    - OnMatchCompletion
+    - OnNodeFailureDetection
+  steps:
+    - step: lock_match_record
+      description: "Ensure no other node is processing this match"
+      action: OPTIMISTIC_LOCK
+      status_check: match.status.payout == "IN_PROGRESS"
+
+    - step: calculate_payout
+      description: "Compute the final stakes and platform fee"
+      logic: |
+        winner = determine_winner(match.commits, match.reveals)
+        if winner:
+          payout_amount = match.stake * 2 * (1 - global.platform_fee)
+          payout_recipient = winner.userId
+        else: # Draw or Reveal failure
+          payout_amount = match.stake (minus network fee)
+          payout_recipient = [p1, p2] 
+
+    - step: check_ledger_consistency
+      description: "Verify if a previous payout attempt partially succeeded"
+      action: QUERY_LEDGER
+      query: "SELECT balance_version FROM Ledger WHERE txId = match.id"
+
+    - step: apply_balance_delta
+      description: "Update the BalanceRecord to the Desired State"
+      if: "ledger_check == NOT_FOUND"
+      action: ATOMIC_UPDATE
+      target: [BalanceRecord(payout_recipient)]
+      delta: payout_amount
+
+    - step: final_commit
+      description: "Mark MatchRecord as finished"
+      action: PATCH
+      target: MatchRecord(match.id)
+      status: "COMPLETED"
+      metrics: "payout_latency_ms"

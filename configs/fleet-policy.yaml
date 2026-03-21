@@ -1,0 +1,22 @@
+apiVersion: antigravity.io/v1
+kind: FleetPolicy
+metadata:
+  name: matchmaking-policy
+spec:
+  matchmaking:
+    ral_abstraction: true
+    tail_latency_target_ms: 50
+    session_resumption: true
+    topology:
+      type: TOPOLOGY_AGNOSTIC
+      regions: ["us-east-1", "eu-west-1", "ap-southeast-1"]
+  match_logic:
+    commit_reveal_enabled: true
+    zero_trust_handshake: true
+    reconciliation:
+      strategy: INTENT_BASED
+      retries: 5
+      timeout: 30s
+    state_handoff:
+      enabled: true
+      rdma_transfer: true

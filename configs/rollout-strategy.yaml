@@ -1,0 +1,31 @@
+apiVersion: antigravity.io/v1
+kind: RolloutStrategy
+metadata:
+  name: platform-fee-canary
+spec:
+  target:
+    resource: GlobalPolicy
+    field: platform_fee
+  phases:
+    - name: canary-5
+      weight: 5
+      metrics: ["balance_consistency_ratio > 0.999", "tail_latency < 50ms"]
+      timeout: 1h
+    - name: mid-stage
+      weight: 50
+      weight_increase: 10/10m
+    - name: full-rollout
+      weight: 100
+  rollback:
+    on: ["inconsistency_alert", "payout_error_surge"]
+    strategy: AUTOMATIC_IMMEDIATE
+---
+# Safety Valve: Reconciliation Buffer
+apiVersion: antigravity.io/v1
+kind: ReconciliationBuffer
+metadata:
+  name: global-payout-buffer
+spec:
+  max_unreconciled_delta: 5000.00
+  isolation: "per-region"
+  strict_consistency: true
