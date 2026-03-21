@@ -102,7 +102,12 @@ let gameMode = 'bot';
 let pvpChannel = null;
 let partnerId = null;
 let pvpMoveReceived = null;
-let currentUser = null;
+let currentWallet = localStorage.getItem('battlerps-device-id');
+
+if (!currentWallet) {
+    currentWallet = 'USER-' + Math.floor(Math.random() * 999999);
+    localStorage.setItem('battlerps-device-id', currentWallet);
+}
 
 // DOM Elements
 const elBalance = document.getElementById('user-balance');
@@ -124,11 +129,6 @@ const elSfxReveal = document.getElementById('sfx-reveal');
 const elPvpStatus = document.getElementById('pvp-status');
 const elPvpText = document.getElementById('pvp-status-text');
 
-// Auth elements
-const elLoginBtn = document.getElementById('btn-login');
-const elLogoutBtn = document.getElementById('btn-logout');
-const elUserInfo = document.getElementById('user-info');
-
 async function init() {
     applyLanguage(currentLang);
     const isMuted = localStorage.getItem('battlerps-muted') === 'true';
@@ -137,48 +137,12 @@ async function init() {
         elMusicBtn.textContent = '🔇';
     }
 
-    // Check Auth session
-    const { data: { session } } = await db.auth.getSession();
-    handleAuthStateChange(session?.user || null);
-
-    db.auth.onAuthStateChange((_event, session) => {
-        handleAuthStateChange(session?.user || null);
-    });
-}
-
-function handleAuthStateChange(user) {
-    currentUser = user;
-    if (user) {
-        elLoginBtn.classList.add('hidden');
-        elUserInfo.classList.remove('hidden');
-        loadUserProfile(user.id);
-    } else {
-        elLoginBtn.classList.remove('hidden');
-        elUserInfo.classList.add('hidden');
-        updateBalance(0);
-    }
-}
-
-async function loadUserProfile(userId) {
-    const { data } = await db.from('user_profiles').select('balance').eq('wallet_address', userId).single();
+    const { data } = await db.from('user_profiles').select('balance').eq('wallet_address', currentWallet).single();
     if (data) updateBalance(data.balance);
     else {
-        const initialBalance = 1000.00;
-        await db.from('user_profiles').insert([{ wallet_address: userId, balance: initialBalance }]);
-        updateBalance(initialBalance);
+        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1000.00 }]);
+        updateBalance(1000.00);
     }
-}
-
-async function login() {
-    await db.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin }
-    });
-}
-
-async function logout() {
-    await db.auth.signOut();
-    window.location.reload();
 }
 
 function playSfx(audio) {
@@ -201,7 +165,6 @@ function applyLanguage(lang) {
     localStorage.setItem('battlerps-lang', lang);
     elLangTrigger.textContent = langEmojis[lang];
     elLangDropdown.classList.remove('active'); 
-    
     const dic = translations[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
@@ -235,13 +198,8 @@ function triggerFloatingPayout(amount, type) {
 }
 
 async function setMode(mode) {
-    if (!currentUser) {
-        alert("Please login to play!");
-        return;
-    }
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
-    
     if (mode === 'pvp') {
         elPvpStatus.classList.remove('hidden');
         document.getElementById('p2-label').textContent = translations[currentLang]['pvp-mode'];
@@ -255,17 +213,16 @@ async function setMode(mode) {
 
 function startPvPDiscovery() {
     pvpChannel = db.channel('lobby', { config: { broadcast: { self: false } } });
-    
     pvpChannel
         .on('broadcast', { event: 'discovery' }, ({ payload }) => {
-            if (!partnerId && payload.wallet !== currentUser.id) {
+            if (!partnerId && payload.wallet !== currentWallet) {
                 partnerId = payload.wallet;
                 elPvpText.textContent = translations[currentLang]['opponent-found'];
-                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentUser.id } });
+                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentWallet } });
             }
         })
         .on('broadcast', { event: 'ack' }, ({ payload }) => {
-            if (!partnerId && payload.to === currentUser.id) {
+            if (!partnerId && payload.to === currentWallet) {
                 partnerId = payload.from;
                 elPvpText.textContent = translations[currentLang]['opponent-found'];
             }
@@ -280,16 +237,14 @@ function startPvPDiscovery() {
         })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentUser.id } });
+                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentWallet } });
             }
         });
 }
 
 function selectMove(move, btn) {
-    if (!currentUser) { login(); return; }
     if (phase !== 'COMMIT') return;
     if (gameMode === 'pvp' && !partnerId) return;
-
     if (!elMusic.muted && elMusic.paused) elMusic.play().catch(console.warn);
     
     myMove = move;
@@ -311,7 +266,7 @@ function selectMove(move, btn) {
             setTimeout(reveal, 500); 
         }, 400);
     } else {
-        pvpChannel.send({ type: 'broadcast', event: 'move', payload: { from: currentUser.id, move: myMove } });
+        pvpChannel.send({ type: 'broadcast', event: 'move', payload: { from: currentWallet, move: myMove } });
         if (pvpMoveReceived) {
             botMove = pvpMoveReceived;
             phase = 'REVEAL';
@@ -348,12 +303,11 @@ function reveal() {
     }, 1200);
 }
 
-async function processPayout() {
+function processPayout() {
     elReconMsg.classList.remove('hidden');
     setTimeout(async () => {
         const result = determineWinner(myMove, botMove);
         elReconMsg.classList.add('hidden');
-        
         let newBalance = balance;
         let diff = 0;
         if (result.winner === 1) {
@@ -369,11 +323,11 @@ async function processPayout() {
 
         setTimeout(async () => {
             updateBalance(newBalance);
-            await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentUser.id);
+            await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
             await db.from('matches').insert([{
                 player_move: myMove, bot_move: botMove, outcome: result.name,
                 stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0,
-                user_id: currentUser.id
+                user_id: currentWallet
             }]);
         }, 800);
         showResult(result);
@@ -416,8 +370,6 @@ function resetMatch() {
 }
 
 // Events
-elLoginBtn.onclick = login;
-elLogoutBtn.onclick = logout;
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };
