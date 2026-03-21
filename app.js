@@ -98,11 +98,11 @@ let balance = 0;
 let myMove = null;
 let botMove = null;
 let phase = 'COMMIT';
-let gameMode = 'bot'; // 'bot' or 'pvp'
+let gameMode = 'bot';
 let pvpChannel = null;
 let partnerId = null;
 let pvpMoveReceived = null;
-const currentWallet = 'USER-' + Math.floor(Math.random() * 100000); // Dynamic for testing
+let currentUser = null;
 
 // DOM Elements
 const elBalance = document.getElementById('user-balance');
@@ -124,6 +124,11 @@ const elSfxReveal = document.getElementById('sfx-reveal');
 const elPvpStatus = document.getElementById('pvp-status');
 const elPvpText = document.getElementById('pvp-status-text');
 
+// Auth elements
+const elLoginBtn = document.getElementById('btn-login');
+const elLogoutBtn = document.getElementById('btn-logout');
+const elUserInfo = document.getElementById('user-info');
+
 async function init() {
     applyLanguage(currentLang);
     const isMuted = localStorage.getItem('battlerps-muted') === 'true';
@@ -132,12 +137,48 @@ async function init() {
         elMusicBtn.textContent = '🔇';
     }
 
-    const { data } = await db.from('user_profiles').select('balance').eq('wallet_address', currentWallet).single();
+    // Check Auth session
+    const { data: { session } } = await db.auth.getSession();
+    handleAuthStateChange(session?.user || null);
+
+    db.auth.onAuthStateChange((_event, session) => {
+        handleAuthStateChange(session?.user || null);
+    });
+}
+
+function handleAuthStateChange(user) {
+    currentUser = user;
+    if (user) {
+        elLoginBtn.classList.add('hidden');
+        elUserInfo.classList.remove('hidden');
+        loadUserProfile(user.id);
+    } else {
+        elLoginBtn.classList.remove('hidden');
+        elUserInfo.classList.add('hidden');
+        updateBalance(0);
+    }
+}
+
+async function loadUserProfile(userId) {
+    const { data } = await db.from('user_profiles').select('balance').eq('wallet_address', userId).single();
     if (data) updateBalance(data.balance);
     else {
-        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1000.00 }]);
-        updateBalance(1000.00);
+        const initialBalance = 1000.00;
+        await db.from('user_profiles').insert([{ wallet_address: userId, balance: initialBalance }]);
+        updateBalance(initialBalance);
     }
+}
+
+async function login() {
+    await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.origin }
+    });
+}
+
+async function logout() {
+    await db.auth.signOut();
+    window.location.reload();
 }
 
 function playSfx(audio) {
@@ -194,6 +235,10 @@ function triggerFloatingPayout(amount, type) {
 }
 
 async function setMode(mode) {
+    if (!currentUser) {
+        alert("Please login to play!");
+        return;
+    }
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
     
@@ -213,14 +258,14 @@ function startPvPDiscovery() {
     
     pvpChannel
         .on('broadcast', { event: 'discovery' }, ({ payload }) => {
-            if (!partnerId && payload.wallet !== currentWallet) {
+            if (!partnerId && payload.wallet !== currentUser.id) {
                 partnerId = payload.wallet;
                 elPvpText.textContent = translations[currentLang]['opponent-found'];
-                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentWallet } });
+                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentUser.id } });
             }
         })
         .on('broadcast', { event: 'ack' }, ({ payload }) => {
-            if (!partnerId && payload.to === currentWallet) {
+            if (!partnerId && payload.to === currentUser.id) {
                 partnerId = payload.from;
                 elPvpText.textContent = translations[currentLang]['opponent-found'];
             }
@@ -235,14 +280,15 @@ function startPvPDiscovery() {
         })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentWallet } });
+                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentUser.id } });
             }
         });
 }
 
 function selectMove(move, btn) {
+    if (!currentUser) { login(); return; }
     if (phase !== 'COMMIT') return;
-    if (gameMode === 'pvp' && !partnerId) return; // Wait for opponent
+    if (gameMode === 'pvp' && !partnerId) return;
 
     if (!elMusic.muted && elMusic.paused) elMusic.play().catch(console.warn);
     
@@ -265,8 +311,7 @@ function selectMove(move, btn) {
             setTimeout(reveal, 500); 
         }, 400);
     } else {
-        // PvP Mode: Send Move
-        pvpChannel.send({ type: 'broadcast', event: 'move', payload: { from: currentWallet, move: myMove } });
+        pvpChannel.send({ type: 'broadcast', event: 'move', payload: { from: currentUser.id, move: myMove } });
         if (pvpMoveReceived) {
             botMove = pvpMoveReceived;
             phase = 'REVEAL';
@@ -324,13 +369,13 @@ async function processPayout() {
 
         setTimeout(async () => {
             updateBalance(newBalance);
-            await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
+            await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentUser.id);
             await db.from('matches').insert([{
                 player_move: myMove, bot_move: botMove, outcome: result.name,
-                stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0
+                stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0,
+                user_id: currentUser.id
             }]);
         }, 800);
-
         showResult(result);
     }, 1200);
 }
@@ -352,7 +397,6 @@ function showResult(result) {
     if (result.winner === 1) elWinnerText.classList.add('text-win');
     else if (result.winner === 2) elWinnerText.classList.add('text-loss');
     else elWinnerText.classList.add('text-draw');
-
     setTimeout(resetMatch, 3000);
 }
 
@@ -372,6 +416,8 @@ function resetMatch() {
 }
 
 // Events
+elLoginBtn.onclick = login;
+elLogoutBtn.onclick = logout;
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };

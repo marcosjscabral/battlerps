@@ -21,10 +21,19 @@
         </div>
         
         <div class="header-right">
-            <button id="music-toggle" class="music-btn">🔊</button>
-            <div class="balance-chip">
-                <span id="user-balance">0.00</span> <span>USDC</span>
+            <div id="auth-container" class="auth-section">
+                <button id="btn-login" class="login-btn">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                    <span>Login</span>
+                </button>
+                <div id="user-info" class="user-info hidden">
+                    <div class="balance-chip">
+                        <span id="user-balance">0.00</span> <span>USDC</span>
+                    </div>
+                    <button id="btn-logout" class="logout-btn" title="Logout">🚪</button>
+                </div>
             </div>
+            <button id="music-toggle" class="music-btn">🔊</button>
         </div>
     </header>
 
