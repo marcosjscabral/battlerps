@@ -34,7 +34,7 @@ const translations = {
     },
     es: {
         'game-title': '¡Batalla!',
-        'game-subtitle': 'Haz tu movimento para empezar la batalla',
+        'game-subtitle': 'Haz tu movimento para empezar la batalha',
         'phase-committing': 'COMETIENDO',
         'phase-reveal': 'FASE DE REVELACIÓN',
         'phase-battle': '¡EMPIEZA LA BATALLA!',
@@ -111,7 +111,7 @@ let pvpMoveReceived = null;
 let partnerName = null;
 let countdownInterval = null;
 let currentTime = 5;
-let firstPlayedSide = null; // 'local' or 'remote'
+let firstPlayedSide = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
 
@@ -162,8 +162,9 @@ async function init() {
             elP1Label.textContent = myUsername;
         } else { elUsernameOverlay.classList.remove('hidden'); }
     } else {
-        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1000.00 }]);
-        updateBalance(1000.00);
+        const initial = 1000.00;
+        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: initial }]);
+        updateBalance(initial);
         elUsernameOverlay.classList.remove('hidden');
     }
 }
@@ -186,12 +187,7 @@ function startPvPCutdown() {
     currentTime = 5;
     elPvpTimer.classList.remove('hidden');
     elPvpTimer.textContent = currentTime + 's';
-    
-    // Alert user
-    if (firstPlayedSide === 'remote') {
-        elPvpText.textContent = translations[currentLang]['opponent-played'];
-    }
-
+    if (firstPlayedSide === 'remote') elPvpText.textContent = translations[currentLang]['opponent-played'];
     countdownInterval = setInterval(() => {
         currentTime--;
         elPvpTimer.textContent = currentTime + 's';
@@ -204,20 +200,20 @@ function startPvPCutdown() {
 
 function handleTimeout() {
     elPvpTimer.classList.add('hidden');
-    // If I didn't play and they did -> I LOSE
-    if (!myMove && pvpMoveReceived) {
-        myMove = 'rock'; // Dummy but failed
-        botMove = pvpMoveReceived;
-        processPayout(true); // Remote win
-    } else if (myMove && !pvpMoveReceived) {
-        // They didn't play -> I WIN
+    // IF I played and they didn't -> forced win for me
+    if (myMove && !pvpMoveReceived) {
         botMove = 'rock'; // Dummy
-        processPayout(false, true); // Local win forced
+        processPayout(false, true); 
+    } else if (!myMove && pvpMoveReceived) {
+        // I didn't play and they did -> forced loss for me
+        myMove = 'rock'; // Dummy
+        botMove = pvpMoveReceived;
+        processPayout(true, false);
     }
 }
 
 function stopCountdown() {
-    clearInterval(countdownInterval);
+    if (countdownInterval) clearInterval(countdownInterval);
     elPvpTimer.classList.add('hidden');
 }
 
@@ -253,8 +249,7 @@ function triggerFloatingPayout(amount, type) {
     float.className = 'floating-payout';
     float.textContent = (amount > 0 ? '+' : '') + amount.toFixed(2) + ' USDC';
     float.classList.add(type === 'win' ? 'text-win' : 'text-loss');
-    float.style.left = '50%';
-    float.style.top = '45%';
+    float.style.left = '50%'; float.style.top = '45%';
     document.body.appendChild(float);
     setTimeout(() => float.remove(), 1200);
 }
@@ -302,6 +297,7 @@ function startPvPDiscovery() {
                     startPvPCutdown();
                 } else if (myMove) {
                     stopCountdown();
+                    botMove = pvpMoveReceived; // CRITICAL FIX: Ensure botMove is set
                     setTimeout(reveal, 500);
                 }
             }
@@ -329,8 +325,7 @@ function selectMove(move, btn) {
             botMove = ['rock', 'paper', 'scissors'][Math.floor(Math.random() * 3)];
             elP2Status.textContent = dic['ready'];
             elP2Status.style.color = 'var(--secondary)';
-            phase = 'REVEAL';
-            updatePhaseText();
+            phase = 'REVEAL'; updatePhaseText();
             document.getElementById('move-controls').style.pointerEvents = 'none';
             document.getElementById('move-controls').style.opacity = '0.5';
             setTimeout(reveal, 500); 
@@ -342,9 +337,8 @@ function selectMove(move, btn) {
             startPvPCutdown();
         } else if (pvpMoveReceived) {
             stopCountdown();
-            botMove = pvpMoveReceived;
-            phase = 'REVEAL';
-            updatePhaseText();
+            botMove = pvpMoveReceived; // CRITICAL FIX: Set botMove here too
+            phase = 'REVEAL'; updatePhaseText();
             document.getElementById('move-controls').style.pointerEvents = 'none';
             document.getElementById('move-controls').style.opacity = '0.5';
             setTimeout(reveal, 500);
@@ -365,7 +359,8 @@ function reveal() {
     
     setTimeout(() => {
         h1.style.animation = 'none'; h2.style.animation = 'none';
-        h1.textContent = moveEmojis[myMove]; h2.textContent = moveEmojis[botMove];
+        h1.textContent = moveEmojis[myMove] || '❓'; 
+        h2.textContent = moveEmojis[botMove] || '❓';
         playSfx(elSfxReveal);
         setTimeout(() => {
             overlay.classList.add('hidden');
@@ -377,10 +372,11 @@ function reveal() {
 function processPayout(forcedLoss = false, forcedWin = false) {
     elReconMsg.classList.remove('hidden');
     setTimeout(async () => {
-        let result = determineWinner(myMove, botMove);
+        let result;
         if (forcedLoss) result = { name: translations[currentLang]['timeout'], winner: 2, mult: 0 };
-        if (forcedWin) result = { name: translations[currentLang]['win'], winner: 1, mult: 1.95 };
-        
+        else if (forcedWin) result = { name: translations[currentLang]['win'], winner: 1, mult: 1.95 };
+        else result = determineWinner(myMove, botMove);
+
         elReconMsg.classList.add('hidden');
         let newBalance = balance;
         if (result.winner === 1) {
@@ -439,6 +435,8 @@ function resetMatch() {
     elP2Status.style.color = 'var(--on-surface-variant)';
     pvpMoveReceived = null;
     firstPlayedSide = null;
+    botMove = null; // Clear moves
+    myMove = null;
     elPvpText.textContent = translations[currentLang]['opponent-found'];
 }
 
