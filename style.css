@@ -113,6 +113,74 @@ header {
     display: none; /* Hide current selection from dropdown */
 }
 
+.mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.mode-btn {
+    background: var(--surface-container-low);
+    border: 2px solid transparent;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--on-surface-variant);
+}
+
+.mode-btn.active {
+    background: var(--primary-container);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.badge-new {
+    background: #FF5722;
+    color: white;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    animation: blink 1.5s infinite;
+}
+
+.pvp-status-bar {
+    background: var(--secondary-container);
+    color: var(--secondary);
+    padding: 10px 20px;
+    border-radius: 30px;
+    margin: 10px auto;
+    max-width: fit-content;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.searching-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--secondary);
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes blink {
+    50% { opacity: 0.5; }
+}
+
 .header-right {
     display: flex;
     align-items: center;

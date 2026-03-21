@@ -43,6 +43,16 @@
     <main>
         <h1 class="game-title" data-i18n="game-title">Battle!</h1>
         <p class="game-subtitle" data-i18n="game-subtitle">Make your move to start the shape match</p>
+        
+        <div class="mode-selector">
+            <button id="btn-mode-bot" class="mode-btn active" data-mode="bot">🆚 BOT</button>
+            <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span class="badge-new">NEW</span></button>
+        </div>
+
+        <div id="pvp-status" class="pvp-status-bar hidden">
+            <span class="searching-dot"></span>
+            <span id="pvp-status-text">Searching for opponent...</span>
+        </div>
         <div class="result-area">
             <div id="result-banner" class="result-banner hidden">
                 <h1 id="winner-text" data-i18n="p1-label">YOU WON!</h1>

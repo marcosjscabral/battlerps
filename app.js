@@ -25,7 +25,10 @@ const translations = {
         'win': 'YOU WON!',
         'loss': 'YOU LOST!',
         'draw': 'DRAW MATCH',
-        'refund': 'STAKE REFUNDED'
+        'refund': 'STAKE REFUNDED',
+        'searching': 'Searching for opponent...',
+        'opponent-found': 'Opponent found!',
+        'pvp-mode': 'ONLINE PVP'
     },
     es: {
         'game-title': '¡Batalla!',
@@ -48,7 +51,10 @@ const translations = {
         'win': '¡GANASTE!',
         'loss': '¡PERDISTE!',
         'draw': 'EMPATE',
-        'refund': 'APUESTA REEMBOLSADA'
+        'refund': 'APUESTA REEMBOLSADA',
+        'searching': 'Buscando oponente...',
+        'opponent-found': '¡Oponente encontrado!',
+        'pvp-mode': 'PVP EN LÍNEA'
     },
     pt: {
         'game-title': 'Batalha!',
@@ -66,12 +72,15 @@ const translations = {
         'rock': 'PEDRA',
         'paper': 'PAPEL',
         'scissors': 'TESOURA',
-        'play-again': 'JOGAR NOVAMENTE',
+        'play-again': 'JUGAR NOVAMENTE',
         'syncing': 'SINCRONIZANDO PAGAMENTO...',
         'win': 'VOCÊ VENCEU!',
         'loss': 'VOCÊ PERDEU!',
         'draw': 'EMPATE',
-        'refund': 'APOSTA REEMBOLSADA'
+        'refund': 'APOSTA REEMBOLSADA',
+        'searching': 'Procurando oponente...',
+        'opponent-found': 'Oponente encontrado!',
+        'pvp-mode': 'PVP ONLINE'
     }
 };
 
@@ -89,7 +98,11 @@ let balance = 0;
 let myMove = null;
 let botMove = null;
 let phase = 'COMMIT';
-const currentWallet = 'USER-123';
+let gameMode = 'bot'; // 'bot' or 'pvp'
+let pvpChannel = null;
+let partnerId = null;
+let pvpMoveReceived = null;
+const currentWallet = 'USER-' + Math.floor(Math.random() * 100000); // Dynamic for testing
 
 // DOM Elements
 const elBalance = document.getElementById('user-balance');
@@ -108,6 +121,8 @@ const elMusic = document.getElementById('bg-music');
 const elMusicBtn = document.getElementById('music-toggle');
 const elSfxBounce = document.getElementById('sfx-bounce');
 const elSfxReveal = document.getElementById('sfx-reveal');
+const elPvpStatus = document.getElementById('pvp-status');
+const elPvpText = document.getElementById('pvp-status-text');
 
 async function init() {
     applyLanguage(currentLang);
@@ -117,15 +132,11 @@ async function init() {
         elMusicBtn.textContent = '🔇';
     }
 
-    const { data } = await db
-        .from('user_profiles')
-        .select('balance')
-        .eq('wallet_address', currentWallet)
-        .single();
+    const { data } = await db.from('user_profiles').select('balance').eq('wallet_address', currentWallet).single();
     if (data) updateBalance(data.balance);
     else {
-        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1500.00 }]);
-        updateBalance(1500.00);
+        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1000.00 }]);
+        updateBalance(1000.00);
     }
 }
 
@@ -156,7 +167,6 @@ function applyLanguage(lang) {
         if (dic[key]) el.textContent = dic[key];
     });
     updatePhaseText();
-    document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
 }
 
 function updatePhaseText() {
@@ -177,21 +187,63 @@ function triggerFloatingPayout(amount, type) {
     float.className = 'floating-payout';
     float.textContent = (amount > 0 ? '+' : '') + amount.toFixed(2) + ' USDC';
     float.classList.add(type === 'win' ? 'text-win' : 'text-loss');
-    
-    // Position at result banner area
     float.style.left = '50%';
     float.style.top = '45%';
     document.body.appendChild(float);
-    
     setTimeout(() => float.remove(), 1200);
 }
 
-async function syncBalanceToSupabase(newBalance) {
-    await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
+async function setMode(mode) {
+    gameMode = mode;
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+    
+    if (mode === 'pvp') {
+        elPvpStatus.classList.remove('hidden');
+        document.getElementById('p2-label').textContent = translations[currentLang]['pvp-mode'];
+        startPvPDiscovery();
+    } else {
+        elPvpStatus.classList.add('hidden');
+        document.getElementById('p2-label').textContent = translations[currentLang]['p2-label'];
+        if (pvpChannel) pvpChannel.unsubscribe();
+    }
+}
+
+function startPvPDiscovery() {
+    pvpChannel = db.channel('lobby', { config: { broadcast: { self: false } } });
+    
+    pvpChannel
+        .on('broadcast', { event: 'discovery' }, ({ payload }) => {
+            if (!partnerId && payload.wallet !== currentWallet) {
+                partnerId = payload.wallet;
+                elPvpText.textContent = translations[currentLang]['opponent-found'];
+                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentWallet } });
+            }
+        })
+        .on('broadcast', { event: 'ack' }, ({ payload }) => {
+            if (!partnerId && payload.to === currentWallet) {
+                partnerId = payload.from;
+                elPvpText.textContent = translations[currentLang]['opponent-found'];
+            }
+        })
+        .on('broadcast', { event: 'move' }, ({ payload }) => {
+            if (payload.from === partnerId) {
+                pvpMoveReceived = payload.move;
+                elP2Status.textContent = translations[currentLang]['ready'];
+                elP2Status.style.color = 'var(--secondary)';
+                if (myMove) setTimeout(reveal, 500);
+            }
+        })
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentWallet } });
+            }
+        });
 }
 
 function selectMove(move, btn) {
     if (phase !== 'COMMIT') return;
+    if (gameMode === 'pvp' && !partnerId) return; // Wait for opponent
+
     if (!elMusic.muted && elMusic.paused) elMusic.play().catch(console.warn);
     
     myMove = move;
@@ -201,16 +253,29 @@ function selectMove(move, btn) {
     elP1Status.textContent = dic['locked'];
     elP1Status.style.color = 'var(--primary)';
     
-    setTimeout(() => {
-        botMove = ['rock', 'paper', 'scissors'][Math.floor(Math.random() * 3)];
-        elP2Status.textContent = dic['ready'];
-        elP2Status.style.color = 'var(--secondary)';
-        phase = 'REVEAL';
-        updatePhaseText();
-        document.getElementById('move-controls').style.pointerEvents = 'none';
-        document.getElementById('move-controls').style.opacity = '0.5';
-        setTimeout(reveal, 500); 
-    }, 400);
+    if (gameMode === 'bot') {
+        setTimeout(() => {
+            botMove = ['rock', 'paper', 'scissors'][Math.floor(Math.random() * 3)];
+            elP2Status.textContent = dic['ready'];
+            elP2Status.style.color = 'var(--secondary)';
+            phase = 'REVEAL';
+            updatePhaseText();
+            document.getElementById('move-controls').style.pointerEvents = 'none';
+            document.getElementById('move-controls').style.opacity = '0.5';
+            setTimeout(reveal, 500); 
+        }, 400);
+    } else {
+        // PvP Mode: Send Move
+        pvpChannel.send({ type: 'broadcast', event: 'move', payload: { from: currentWallet, move: myMove } });
+        if (pvpMoveReceived) {
+            botMove = pvpMoveReceived;
+            phase = 'REVEAL';
+            updatePhaseText();
+            document.getElementById('move-controls').style.pointerEvents = 'none';
+            document.getElementById('move-controls').style.opacity = '0.5';
+            setTimeout(reveal, 500);
+        }
+    }
 }
 
 function reveal() {
@@ -238,7 +303,7 @@ function reveal() {
     }, 1200);
 }
 
-function processPayout() {
+async function processPayout() {
     elReconMsg.classList.remove('hidden');
     setTimeout(async () => {
         const result = determineWinner(myMove, botMove);
@@ -259,12 +324,12 @@ function processPayout() {
 
         setTimeout(async () => {
             updateBalance(newBalance);
-            await syncBalanceToSupabase(newBalance);
+            await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
             await db.from('matches').insert([{
                 player_move: myMove, bot_move: botMove, outcome: result.name,
                 stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0
             }]);
-        }, 800); // Update balance when floating reaches target
+        }, 800);
 
         showResult(result);
     }, 1200);
@@ -283,8 +348,7 @@ function showResult(result) {
     updatePhaseText();
     elResultBanner.classList.remove('hidden');
     elWinnerText.textContent = result.name;
-    
-    elWinnerText.className = ''; // reset classes
+    elWinnerText.className = ''; 
     if (result.winner === 1) elWinnerText.classList.add('text-win');
     else if (result.winner === 2) elWinnerText.classList.add('text-loss');
     else elWinnerText.classList.add('text-draw');
@@ -302,8 +366,9 @@ function resetMatch() {
     updatePhaseText();
     elP1Status.textContent = dic['awaiting'];
     elP1Status.style.color = 'var(--on-surface-variant)';
-    elP2Status.textContent = dic['thinking'];
+    elP2Status.textContent = gameMode === 'bot' ? dic['thinking'] : dic['awaiting'];
     elP2Status.style.color = 'var(--on-surface-variant)';
+    pvpMoveReceived = null;
 }
 
 // Events
@@ -311,6 +376,7 @@ document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectM
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };
 elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
+document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', () => elLangDropdown.classList.remove('active'));
 
 init();
