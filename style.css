@@ -245,8 +245,17 @@ main {
     z-index: 100;
 }
 
-@keyframes hand-bounce-p1 { 0%, 100% { transform: scaleX(-1) translateY(0); } 50% { transform: scaleX(-1) translateY(-40px); } }
-@keyframes hand-bounce-p2 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-40px); } }
+#p1-anim-hand { transform: scaleX(-1) rotate(90deg); }
+#p2-anim-hand { transform: rotate(-90deg); }
+
+@keyframes hand-bounce-p1 { 
+    0%, 100% { transform: scaleX(-1) rotate(90deg) translateY(0); } 
+    50% { transform: scaleX(-1) rotate(90deg) translateY(-40px); } 
+}
+@keyframes hand-bounce-p2 { 
+    0%, 100% { transform: rotate(-90deg) translateY(0); } 
+    50% { transform: rotate(-90deg) translateY(-40px); } 
+}
 
 /* Result Modal */
 .result-overlay {
