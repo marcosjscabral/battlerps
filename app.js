@@ -102,7 +102,9 @@ let gameMode = 'bot';
 let pvpChannel = null;
 let partnerId = null;
 let pvpMoveReceived = null;
+let partnerName = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
+let myUsername = localStorage.getItem('battlerps-user-handle');
 
 if (!currentWallet) {
     currentWallet = 'USER-' + Math.floor(Math.random() * 999999);
@@ -128,6 +130,12 @@ const elSfxBounce = document.getElementById('sfx-bounce');
 const elSfxReveal = document.getElementById('sfx-reveal');
 const elPvpStatus = document.getElementById('pvp-status');
 const elPvpText = document.getElementById('pvp-status-text');
+const elUsernameOverlay = document.getElementById('username-overlay');
+const elUsernameInput = document.getElementById('username-input');
+const elSaveUsername = document.getElementById('btn-save-username');
+const elUsernameError = document.getElementById('username-error');
+const elP1Label = document.getElementById('p1-label');
+const elP2Label = document.getElementById('p2-label');
 
 async function init() {
     applyLanguage(currentLang);
@@ -137,12 +145,60 @@ async function init() {
         elMusicBtn.textContent = '🔇';
     }
 
-    const { data } = await db.from('user_profiles').select('balance').eq('wallet_address', currentWallet).single();
-    if (data) updateBalance(data.balance);
-    else {
+    const { data } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
+    if (data) {
+        updateBalance(data.balance);
+        if (data.username) {
+            myUsername = data.username;
+            localStorage.setItem('battlerps-user-handle', myUsername);
+            elP1Label.textContent = myUsername;
+        } else {
+            showUsernameRequired();
+        }
+    } else {
         await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: 1000.00 }]);
         updateBalance(1000.00);
+        showUsernameRequired();
     }
+}
+
+function showUsernameRequired() {
+    elUsernameOverlay.classList.remove('hidden');
+}
+
+async function saveUsername() {
+    let raw = elUsernameInput.value.trim();
+    if (raw.length < 3) {
+        showError("Username is too short!");
+        return;
+    }
+    
+    // Force @ prefix
+    const finalHandle = raw.startsWith('@') ? raw : '@' + raw;
+    
+    // Check uniqueness
+    const { data: existing } = await db.from('user_profiles').select('wallet_address').eq('username', finalHandle).single();
+    if (existing && existing.wallet_address !== currentWallet) {
+        showError("This BATTLE ID is already taken!");
+        return;
+    }
+
+    const { error } = await db.from('user_profiles').update({ username: finalHandle }).eq('wallet_address', currentWallet);
+    if (error) {
+        showError("Error saving: " + error.message);
+        return;
+    }
+
+    myUsername = finalHandle;
+    localStorage.setItem('battlerps-user-handle', myUsername);
+    elP1Label.textContent = myUsername;
+    elUsernameOverlay.classList.add('hidden');
+}
+
+function showError(txt) {
+    elUsernameError.textContent = txt;
+    elUsernameError.classList.remove('hidden');
+    setTimeout(() => elUsernameError.classList.add('hidden'), 3000);
 }
 
 function playSfx(audio) {
@@ -168,7 +224,11 @@ function applyLanguage(lang) {
     const dic = translations[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (dic[key]) el.textContent = dic[key];
+        if (dic[key]) {
+            if (el.id === 'p1-label' && myUsername) el.textContent = myUsername;
+            else if (el.id === 'p1-label') el.textContent = dic[key];
+            else el.textContent = dic[key];
+        }
     });
     updatePhaseText();
 }
@@ -202,11 +262,10 @@ async function setMode(mode) {
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
     if (mode === 'pvp') {
         elPvpStatus.classList.remove('hidden');
-        document.getElementById('p2-label').textContent = translations[currentLang]['pvp-mode'];
         startPvPDiscovery();
     } else {
         elPvpStatus.classList.add('hidden');
-        document.getElementById('p2-label').textContent = translations[currentLang]['p2-label'];
+        elP2Label.textContent = translations[currentLang]['p2-label'];
         if (pvpChannel) pvpChannel.unsubscribe();
     }
 }
@@ -217,13 +276,17 @@ function startPvPDiscovery() {
         .on('broadcast', { event: 'discovery' }, ({ payload }) => {
             if (!partnerId && payload.wallet !== currentWallet) {
                 partnerId = payload.wallet;
+                partnerName = payload.username || translations[currentLang]['pvp-mode'];
+                elP2Label.textContent = partnerName;
                 elPvpText.textContent = translations[currentLang]['opponent-found'];
-                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentWallet } });
+                pvpChannel.send({ type: 'broadcast', event: 'ack', payload: { to: partnerId, from: currentWallet, username: myUsername } });
             }
         })
         .on('broadcast', { event: 'ack' }, ({ payload }) => {
             if (!partnerId && payload.to === currentWallet) {
                 partnerId = payload.from;
+                partnerName = payload.username || translations[currentLang]['pvp-mode'];
+                elP2Label.textContent = partnerName;
                 elPvpText.textContent = translations[currentLang]['opponent-found'];
             }
         })
@@ -237,13 +300,13 @@ function startPvPDiscovery() {
         })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentWallet } });
+                pvpChannel.send({ type: 'broadcast', event: 'discovery', payload: { wallet: currentWallet, username: myUsername } });
             }
         });
 }
 
 function selectMove(move, btn) {
-    if (phase !== 'COMMIT') return;
+    if (phase !== 'COMMIT' || !myUsername) return;
     if (gameMode === 'pvp' && !partnerId) return;
     if (!elMusic.muted && elMusic.paused) elMusic.play().catch(console.warn);
     
@@ -370,6 +433,7 @@ function resetMatch() {
 }
 
 // Events
+elSaveUsername.onclick = saveUsername;
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BATTLE SHAPE | Rock Paper Scissors</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2.8">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -53,36 +53,48 @@
             <span class="searching-dot"></span>
             <span id="pvp-status-text">Searching for opponent...</span>
         </div>
-        <div class="result-area">
-            <div id="result-banner" class="result-banner hidden">
-                <h1 id="winner-text" data-i18n="p1-label">YOU WON!</h1>
+
+        <div id="username-overlay" class="username-overlay hidden">
+            <div class="username-card">
+                <h2>BATTLE ID</h2>
+                <p>Choose your unique @handle to join the arena</p>
+                <div class="input-group">
+                    <span class="handle-prefix">@</span>
+                    <input type="text" id="username-input" placeholder="nickname" maxlength="20">
+                </div>
+                <button id="btn-save-username" class="battle-btn">JOIN ARENA</button>
+                <p id="username-error" class="error-msg hidden"></p>
             </div>
         </div>
 
         <div class="arena-card">
+            <div class="result-area">
+                <div id="result-banner" class="result-banner hidden">
+                    <h1 id="winner-text">YOU WON!</h1>
+                </div>
+            </div>
+
             <div class="arena-header">
                 <div class="phase-chip" id="phase-chip" data-i18n="phase-committing">COMMITTING</div>
             </div>
-            
-            <div class="match-players">
-                <div class="player-slot">
-                    <div class="avatar" id="p1-avatar">
-                        <img src="p1.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        <span id="p1-move-icon" class="hidden" style="position: absolute; bottom: -10px; right: -10px; font-size: 24px;"></span>
+
+            <div class="players-row">
+                <div class="player-unit">
+                    <div class="avatar-box">
+                        <img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" alt="P1" class="avatar-img">
                     </div>
-                    <label data-i18n="p1-label" style="font-size: 10px; margin-top: 8px; display: block; font-weight: 700;">YOU</label>
-                    <div id="p1-status" data-i18n="awaiting" style="font-size: 9px; margin-top: 4px; color: var(--on-surface-variant);">Awaiting...</div>
+                    <div id="p1-label" class="player-name">@YOU</div>
+                    <div id="p1-status" class="player-status" data-i18n="awaiting">Awaiting...</div>
                 </div>
 
-                <div class="vs-badge">VS</div>
+                <div class="vs-symbol">VS</div>
 
-                <div class="player-slot">
-                    <div class="avatar" id="p2-avatar">
-                        <img src="p2.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                        <span id="p2-move-icon" class="hidden" style="position: absolute; bottom: -10px; left: -10px; font-size: 24px;"></span>
+                <div class="player-unit">
+                    <div class="avatar-box">
+                        <img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p2.png" alt="P2" class="avatar-img">
                     </div>
-                    <label data-i18n="p2-label" style="font-size: 10px; margin-top: 8px; display: block; font-weight: 700;">SHAPE MASTER</label>
-                    <div id="p2-status" data-i18n="thinking" style="font-size: 9px; margin-top: 4px; color: var(--on-surface-variant);">Thinking...</div>
+                    <div id="p2-label" class="player-name" data-i18n="p2-label">SHAPE MASTER</div>
+                    <div id="p2-status" class="player-status" data-i18n="thinking">Thinking...</div>
                 </div>
             </div>
 
@@ -102,16 +114,17 @@
             </div>
         </div>
 
-        <div class="animation-stage hidden" id="animation-overlay">
-            <div id="p1-anim-hand" style="font-size: 80px;">✊</div>
-            <div id="p2-anim-hand" style="font-size: 80px;">✊</div>
-        </div>
-
-        <div id="recon-msg" class="hidden" data-i18n="syncing" style="margin-top: 20px; font-size: 11px; font-weight: 700; color: var(--primary);">
-            SYNCING PAYOUT...
-        </div>
+        <div id="recon-msg" class="recon-payout hidden" data-i18n="syncing">SYNCING PAYOUT...</div>
     </main>
 
-    <script src="app.js"></script>
+    <!-- Animation Overlay -->
+    <div id="animation-overlay" class="animation-overlay hidden">
+        <div class="arena-hands">
+            <div id="p1-anim-hand" class="hand">✊</div>
+            <div id="p2-anim-hand" class="hand">✊</div>
+        </div>
+    </div>
+
+    <script src="app.js?v=2.8"></script>
 </body>
 </html>
