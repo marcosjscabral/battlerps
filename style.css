@@ -282,17 +282,33 @@ main {
     50% { transform: rotate(-90deg) translateY(-60px); } 
 }
 
-/* Result Banner (Inline) */
+/* Result Banner Area (Reserved Space) */
+.result-area {
+    min-height: 120px; /* Pre-allocate space to prevent layout jump */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 10px 0;
+}
+
 .result-banner {
     background: var(--surface);
     border-radius: 20px;
     padding: 20px;
-    margin: 20px auto;
+    width: 100%;
     max-width: 400px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     border: 2px solid var(--primary-container);
-    animation: slideDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.result-banner.hidden {
+    display: flex !important; /* Keep the physical space */
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    visibility: hidden;
 }
 
 .result-banner h1 {
@@ -305,11 +321,6 @@ main {
     margin: 5px 0 0;
     font-weight: 700;
     color: var(--on-surface-variant);
-}
-
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 .battle-btn {
