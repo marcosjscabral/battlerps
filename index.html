@@ -27,9 +27,15 @@
     <main>
         <h1 class="game-title" data-i18n="game-title">Battle!</h1>
         <p class="game-subtitle" data-i18n="game-subtitle">Make your move to start the shape match</p>
+        <div id="result-banner" class="result-banner hidden">
+            <h1 id="winner-text">YOU WON!</h1>
+            <p id="winner-amount">+195.00 USDC</p>
+        </div>
 
-        <div class="battle-arena">
-            <div class="phase-tag" id="phase-chip">COMMITTING</div>
+        <div class="arena-card">
+            <div class="arena-header">
+                <div class="phase-chip" id="phase-chip" data-i18n="phase-committing">COMMITTING</div>
+            </div>
             
             <div class="match-players">
                 <div class="player-slot">
@@ -72,14 +78,6 @@
         <div class="animation-stage hidden" id="animation-overlay">
             <div id="p1-anim-hand" style="font-size: 80px;">✊</div>
             <div id="p2-anim-hand" style="font-size: 80px;">✊</div>
-        </div>
-
-        <div id="result-overlay" class="result-overlay hidden">
-            <div class="result-card">
-                <h1 class="result-title" id="winner-text">YOU WON!</h1>
-                <p class="result-amount" id="winner-amount">+195.00 USDC</p>
-                <button class="battle-btn" id="new-match-btn" data-i18n="play-again">PLAY AGAIN</button>
-            </div>
         </div>
 
         <div id="recon-msg" class="hidden" data-i18n="syncing" style="margin-top: 20px; font-size: 11px; font-weight: 700; color: var(--primary);">

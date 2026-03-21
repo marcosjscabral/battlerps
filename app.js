@@ -95,7 +95,7 @@ const currentWallet = 'USER-123';
 const elBalance = document.getElementById('user-balance');
 const elPhase = document.getElementById('phase-chip');
 const elReconMsg = document.getElementById('recon-msg');
-const elResultArea = document.getElementById('result-overlay');
+const elResultBanner = document.getElementById('result-banner');
 const elWinnerText = document.getElementById('winner-text');
 const elWinnerAmount = document.getElementById('winner-amount');
 const elP1Status = document.getElementById('p1-status');
@@ -195,8 +195,9 @@ function selectMove(move, btn) {
         phase = 'REVEAL';
         updatePhaseText();
         
-        // Hide selection grid
-        document.getElementById('move-controls').classList.add('hidden');
+        // Disable selection grid (prevent multiple clicks during match)
+        document.getElementById('move-controls').style.pointerEvents = 'none';
+        document.getElementById('move-controls').style.opacity = '0.5';
         
         // AUTOMATIC REVEAL START
         setTimeout(reveal, 500); 
@@ -204,7 +205,6 @@ function selectMove(move, btn) {
 }
 
 function reveal() {
-    const dic = translations[currentLang];
     phase = 'BATTLE';
     updatePhaseText();
     
@@ -279,19 +279,42 @@ function showResult(result, payout) {
     const dic = translations[currentLang];
     phase = 'RESULT';
     updatePhaseText();
-    elResultArea.classList.remove('hidden');
+    elResultBanner.classList.remove('hidden');
     elWinnerText.textContent = result.name;
     
     if (result.winner === 1) {
         elWinnerText.style.color = 'var(--primary)';
         elWinnerAmount.textContent = `+${payout.toFixed(2)} USDC`;
+        elResultBanner.style.borderColor = 'var(--primary-container)';
     } else if (result.winner === 2) {
         elWinnerText.style.color = '#b31b25';
         elWinnerAmount.textContent = `-${config.stake.toFixed(2)} USDC`;
+        elResultBanner.style.borderColor = '#ffcdd2';
     } else {
         elWinnerText.style.color = 'var(--tertiary)';
         elWinnerAmount.textContent = dic['refund'];
+        elResultBanner.style.borderColor = 'var(--surface-container-low)';
     }
+
+    // AUTO RESET after 3 seconds
+    setTimeout(resetMatch, 3000);
+}
+
+function resetMatch() {
+    const dic = translations[currentLang];
+    elResultBanner.classList.add('hidden');
+    
+    // Re-enable controls
+    document.getElementById('move-controls').style.pointerEvents = 'auto';
+    document.getElementById('move-controls').style.opacity = '1';
+    document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
+    
+    phase = 'COMMIT';
+    updatePhaseText();
+    elP1Status.textContent = dic['awaiting'];
+    elP1Status.style.color = 'var(--on-surface-variant)';
+    elP2Status.textContent = dic['thinking'];
+    elP2Status.style.color = 'var(--on-surface-variant)';
 }
 
 // Events
@@ -312,22 +335,8 @@ elLangTrigger.onclick = (e) => {
     elLangDropdown.classList.toggle('active');
 };
 
-// Close dropdown on outside click
 document.addEventListener('click', () => {
     elLangDropdown.classList.remove('active');
 });
-
-document.getElementById('new-match-btn').onclick = () => {
-    const dic = translations[currentLang];
-    document.getElementById('move-controls').classList.remove('hidden');
-    elResultArea.classList.add('hidden');
-    phase = 'COMMIT';
-    updatePhaseText();
-    elP1Status.textContent = dic['awaiting'];
-    elP1Status.style.color = 'var(--on-surface-variant)';
-    elP2Status.textContent = dic['thinking'];
-    elP2Status.style.color = 'var(--on-surface-variant)';
-    document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
-};
 
 init();
