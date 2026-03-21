@@ -107,6 +107,8 @@ const elLangTrigger = document.getElementById('lang-current');
 const elLangDropdown = document.getElementById('lang-dropdown');
 const elMusic = document.getElementById('bg-music');
 const elMusicBtn = document.getElementById('music-toggle');
+const elSfxBounce = document.getElementById('sfx-bounce');
+const elSfxReveal = document.getElementById('sfx-reveal');
 
 async function init() {
     applyLanguage(currentLang);
@@ -133,13 +135,19 @@ async function init() {
     }
 }
 
+function playSfx(audio) {
+    if (!elMusic.muted) {
+        audio.currentTime = 0;
+        audio.play().catch(console.warn);
+    }
+}
+
 function toggleMusic() {
     const isMuted = !elMusic.muted;
     elMusic.muted = isMuted;
     localStorage.setItem('battlerps-muted', isMuted);
     elMusicBtn.textContent = isMuted ? '🔇' : '🔊';
     
-    // Start if not playing (safari/chrome policy workaround)
     if (!isMuted && elMusic.paused) {
         elMusic.play().catch(console.warn);
     }
@@ -195,7 +203,6 @@ async function saveMatchToSupabase(matchData) {
 function selectMove(move, btn) {
     if (phase !== 'COMMIT') return;
 
-    // Trigger music on first interaction
     if (!elMusic.muted && elMusic.paused) {
         elMusic.play().catch(console.warn);
     }
@@ -233,12 +240,20 @@ function reveal() {
     h2.textContent = '✊';
     h1.style.animation = 'hand-bounce-p1 0.4s ease-in-out infinite';
     h2.style.animation = 'hand-bounce-p2 0.4s ease-in-out infinite';
+
+    // SFX Bounces (3 times)
+    playSfx(elSfxBounce);
+    setTimeout(() => playSfx(elSfxBounce), 400);
+    setTimeout(() => playSfx(elSfxBounce), 800);
     
     setTimeout(() => {
         h1.style.animation = 'none';
         h2.style.animation = 'none';
         h1.textContent = moveEmojis[myMove];
         h2.textContent = moveEmojis[botMove];
+        
+        // SFX Reveal
+        playSfx(elSfxReveal);
         
         setTimeout(() => {
             overlay.classList.add('hidden');
