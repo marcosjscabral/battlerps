@@ -30,7 +30,11 @@ const translations = {
         'opponent-found': 'Opponent found!',
         'opponent-played': 'Hurry! Opponent ready!',
         'pvp-mode': 'ONLINE PVP',
-        'timeout': 'TIME OUT!'
+        'timeout': 'TIME OUT!',
+        'name-short': 'Nickname too short!',
+        'name-taken': 'This BATTLE ID is taken!',
+        'name-error': 'Error saving nickname',
+        'joining': 'JOINING ARENA...'
     },
     es: {
         'game-title': '¡Batalla!',
@@ -58,7 +62,11 @@ const translations = {
         'opponent-found': '¡Oponente encontrado!',
         'opponent-played': '¡Rápido! Oponente listo!',
         'pvp-mode': 'PVP EN LÍNEA',
-        'timeout': '¡TIEMPO AGOTADO!'
+        'timeout': '¡TIEMPO AGOTADO!',
+        'name-short': '¡Apodo muy corto!',
+        'name-taken': '¡BATTLE ID ya usado!',
+        'name-error': 'Error al guardar apodo',
+        'joining': 'ENTRANDO...'
     },
     pt: {
         'game-title': 'Batalha!',
@@ -86,7 +94,11 @@ const translations = {
         'opponent-found': 'Oponente encontrado!',
         'opponent-played': 'Depressa! Oponente pronto!',
         'pvp-mode': 'PVP ONLINE',
-        'timeout': 'TEMPO ESGOTADO!'
+        'timeout': 'TEMPO ESGOTADO!',
+        'name-short': 'Nickname muito curto!',
+        'name-taken': 'Este BATTLE ID já existe!',
+        'name-error': 'Erro ao salvar nickname',
+        'joining': 'ENTRANDO...'
     }
 };
 
@@ -143,6 +155,7 @@ const elPvpTimer = document.getElementById('pvp-timer');
 const elUsernameOverlay = document.getElementById('username-overlay');
 const elUsernameInput = document.getElementById('username-input');
 const elSaveUsername = document.getElementById('btn-save-username');
+const elUsernameError = document.getElementById('username-error');
 const elP1Label = document.getElementById('p1-label');
 const elP2Label = document.getElementById('p2-label');
 
@@ -154,7 +167,8 @@ async function init() {
         elMusicBtn.textContent = '🔇';
     }
 
-    const { data } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
+    // Use Upsert logic to ensure profile exists
+    const { data, error } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
     if (data) {
         updateBalance(data.balance);
         if (data.username) {
@@ -163,7 +177,7 @@ async function init() {
         } else { elUsernameOverlay.classList.remove('hidden'); }
     } else {
         const initial = 1000.00;
-        await db.from('user_profiles').insert([{ wallet_address: currentWallet, balance: initial }]);
+        await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
         updateBalance(initial);
         elUsernameOverlay.classList.remove('hidden');
     }
@@ -171,15 +185,43 @@ async function init() {
 
 async function saveUsername() {
     let raw = elUsernameInput.value.trim();
-    if (raw.length < 3) return;
-    const finalHandle = raw.startsWith('@') ? raw : '@' + raw;
-    const { error } = await db.from('user_profiles').update({ username: finalHandle }).eq('wallet_address', currentWallet);
-    if (!error) {
-        myUsername = finalHandle;
-        localStorage.setItem('battlerps-user-handle', myUsername);
-        elP1Label.textContent = myUsername;
-        elUsernameOverlay.classList.add('hidden');
+    const dic = translations[currentLang];
+    
+    if (raw.length < 3) {
+        showError(dic['name-short']);
+        return;
     }
+    
+    const finalHandle = raw.startsWith('@') ? raw : '@' + raw;
+    elSaveUsername.disabled = true;
+    elSaveUsername.textContent = dic['joining'];
+    
+    // Check if name is taken
+    const { data: takenCheck } = await db.from('user_profiles').select('wallet_address').eq('username', finalHandle).single();
+    if (takenCheck && takenCheck.wallet_address !== currentWallet) {
+        showError(dic['name-taken']);
+        elSaveUsername.disabled = false;
+        elSaveUsername.textContent = 'JOIN ARENA';
+        return;
+    }
+
+    const { error } = await db.from('user_profiles').update({ username: finalHandle }).eq('wallet_address', currentWallet);
+    if (error) {
+        showError(dic['name-error']);
+        elSaveUsername.disabled = false;
+        elSaveUsername.textContent = 'JOIN ARENA';
+        return;
+    }
+
+    myUsername = finalHandle;
+    localStorage.setItem('battlerps-user-handle', myUsername);
+    elP1Label.textContent = myUsername;
+    elUsernameOverlay.classList.add('hidden');
+}
+
+function showError(txt) {
+    elUsernameError.textContent = txt;
+    elUsernameError.classList.remove('hidden');
 }
 
 function startPvPCutdown() {
@@ -200,15 +242,10 @@ function startPvPCutdown() {
 
 function handleTimeout() {
     elPvpTimer.classList.add('hidden');
-    // IF I played and they didn't -> forced win for me
     if (myMove && !pvpMoveReceived) {
-        botMove = 'rock'; // Dummy
-        processPayout(false, true); 
+        botMove = 'rock'; processPayout(false, true); 
     } else if (!myMove && pvpMoveReceived) {
-        // I didn't play and they did -> forced loss for me
-        myMove = 'rock'; // Dummy
-        botMove = pvpMoveReceived;
-        processPayout(true, false);
+        myMove = 'rock'; botMove = pvpMoveReceived; processPayout(true, false);
     }
 }
 
@@ -297,7 +334,7 @@ function startPvPDiscovery() {
                     startPvPCutdown();
                 } else if (myMove) {
                     stopCountdown();
-                    botMove = pvpMoveReceived; // CRITICAL FIX: Ensure botMove is set
+                    botMove = pvpMoveReceived;
                     setTimeout(reveal, 500);
                 }
             }
@@ -312,7 +349,6 @@ function startPvPDiscovery() {
 function selectMove(move, btn) {
     if (phase !== 'COMMIT' || !myUsername) return;
     if (gameMode === 'pvp' && !partnerId) return;
-    
     myMove = move;
     const dic = translations[currentLang];
     document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
@@ -337,7 +373,7 @@ function selectMove(move, btn) {
             startPvPCutdown();
         } else if (pvpMoveReceived) {
             stopCountdown();
-            botMove = pvpMoveReceived; // CRITICAL FIX: Set botMove here too
+            botMove = pvpMoveReceived;
             phase = 'REVEAL'; updatePhaseText();
             document.getElementById('move-controls').style.pointerEvents = 'none';
             document.getElementById('move-controls').style.opacity = '0.5';
@@ -347,8 +383,7 @@ function selectMove(move, btn) {
 }
 
 function reveal() {
-    phase = 'BATTLE';
-    updatePhaseText();
+    phase = 'BATTLE'; updatePhaseText();
     overlay.classList.remove('hidden');
     h1.textContent = '✊'; h2.textContent = '✊';
     h1.style.animation = 'hand-bounce-p1 0.4s ease-in-out infinite';
@@ -356,16 +391,11 @@ function reveal() {
     playSfx(elSfxBounce);
     setTimeout(() => playSfx(elSfxBounce), 400);
     setTimeout(() => playSfx(elSfxBounce), 800);
-    
     setTimeout(() => {
         h1.style.animation = 'none'; h2.style.animation = 'none';
-        h1.textContent = moveEmojis[myMove] || '❓'; 
-        h2.textContent = moveEmojis[botMove] || '❓';
+        h1.textContent = moveEmojis[myMove] || '❓'; h2.textContent = moveEmojis[botMove] || '❓';
         playSfx(elSfxReveal);
-        setTimeout(() => {
-            overlay.classList.add('hidden');
-            processPayout();
-        }, 1500);
+        setTimeout(() => { overlay.classList.add('hidden'); processPayout(); }, 1500);
     }, 1200);
 }
 
@@ -376,26 +406,14 @@ function processPayout(forcedLoss = false, forcedWin = false) {
         if (forcedLoss) result = { name: translations[currentLang]['timeout'], winner: 2, mult: 0 };
         else if (forcedWin) result = { name: translations[currentLang]['win'], winner: 1, mult: 1.95 };
         else result = determineWinner(myMove, botMove);
-
         elReconMsg.classList.add('hidden');
         let newBalance = balance;
-        if (result.winner === 1) {
-            const payout = config.stake * result.mult;
-            newBalance = balance + (payout - config.stake);
-            triggerFloatingPayout(payout, 'win');
-        } else if (result.winner === 2) {
-            newBalance = balance - config.stake;
-            triggerFloatingPayout(-config.stake, 'loss');
-        }
-
+        if (result.winner === 1) { newBalance += (config.stake * result.mult - config.stake); triggerFloatingPayout(config.stake * result.mult, 'win'); }
+        else if (result.winner === 2) { newBalance -= config.stake; triggerFloatingPayout(-config.stake, 'loss'); }
         setTimeout(async () => {
             updateBalance(newBalance);
             await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
-            await db.from('matches').insert([{
-                player_move: myMove, bot_move: botMove, outcome: result.name,
-                stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0,
-                user_id: currentWallet
-            }]);
+            await db.from('matches').insert([{ player_move: myMove, bot_move: botMove, outcome: result.name, stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0, user_id: currentWallet }]);
         }, 800);
         showResult(result);
     }, 1200);
@@ -404,14 +422,12 @@ function processPayout(forcedLoss = false, forcedWin = false) {
 function determineWinner(p1, p2) {
     const dic = translations[currentLang];
     if (p1 === p2) return { name: dic['draw'], winner: 0, mult: 1 };
-    if ((p1 === 'rock' && p2 === 'scissors') || (p1 === 'paper' && p2 === 'rock') || (p1 === 'scissors' && p2 === 'paper'))
-        return { name: dic['win'], winner: 1, mult: 1.95 };
+    if ((p1 === 'rock' && p2 === 'scissors') || (p1 === 'paper' && p2 === 'rock') || (p1 === 'scissors' && p2 === 'paper')) return { name: dic['win'], winner: 1, mult: 1.95 };
     return { name: dic['loss'], winner: 2, mult: 0 };
 }
 
 function showResult(result) {
-    phase = 'RESULT';
-    updatePhaseText();
+    phase = 'RESULT'; updatePhaseText();
     elResultBanner.classList.remove('hidden');
     elWinnerText.textContent = result.name;
     elWinnerText.className = ''; 
@@ -427,16 +443,10 @@ function resetMatch() {
     document.getElementById('move-controls').style.pointerEvents = 'auto';
     document.getElementById('move-controls').style.opacity = '1';
     document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
-    phase = 'COMMIT';
-    updatePhaseText();
-    elP1Status.textContent = dic['awaiting'];
-    elP1Status.style.color = 'var(--on-surface-variant)';
-    elP2Status.textContent = gameMode === 'bot' ? dic['thinking'] : dic['awaiting'];
-    elP2Status.style.color = 'var(--on-surface-variant)';
-    pvpMoveReceived = null;
-    firstPlayedSide = null;
-    botMove = null; // Clear moves
-    myMove = null;
+    phase = 'COMMIT'; updatePhaseText();
+    elP1Status.textContent = dic['awaiting']; elP1Status.style.color = 'var(--on-surface-variant)';
+    elP2Status.textContent = gameMode === 'bot' ? dic['thinking'] : dic['awaiting']; elP2Status.style.color = 'var(--on-surface-variant)';
+    pvpMoveReceived = null; firstPlayedSide = null; botMove = null; myMove = null;
     elPvpText.textContent = translations[currentLang]['opponent-found'];
 }
 
