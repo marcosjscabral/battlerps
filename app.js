@@ -111,8 +111,8 @@ const translations = {
     }
 };
 
-const langEmojis = { en: '🇺🇸', es: '🇪🇸', pt: '🇵🇹' };
-let currentLang = localStorage.getItem('battlerps-lang') || 'en';
+const langEmojis = { en: '🇺🇸', es: '🇪🇸', pt: '🇧🇷' };
+let currentLang = localStorage.getItem('battlerps-lang') || 'pt';
 
 const config = {
     stake: 100.00,
