@@ -97,10 +97,10 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 20px; di
 .animation-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
 .arena-hands { display: flex; gap: 40px; }
 .hand { font-size: 8rem; }
-#p1-anim-hand { transform: scaleX(-1) rotate(90deg); }
+#p1-anim-hand { transform: scaleX(-1) rotate(-90deg); }
 #p2-anim-hand { transform: rotate(-90deg); }
 
-@keyframes hand-bounce-p1 { 0%, 100% { transform: scaleX(-1) rotate(90deg) translateX(0); } 50% { transform: scaleX(-1) rotate(90deg) translateX(-20px); } }
+@keyframes hand-bounce-p1 { 0%, 100% { transform: scaleX(-1) rotate(-90deg) translateX(0); } 50% { transform: scaleX(-1) rotate(-90deg) translateX(-20px); } }
 @keyframes hand-bounce-p2 { 0%, 100% { transform: rotate(-90deg) translateX(0); } 50% { transform: rotate(-90deg) translateX(-20px); } }
 
 .text-win { color: var(--win); }
