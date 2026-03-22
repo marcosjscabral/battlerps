@@ -352,20 +352,10 @@ async function saveProfile() {
     const newUsername = "@" + elProfileUser.value.trim().replace('@', '');
     const newEmail = elProfileEmail.value.trim();
     
-    // Check uniqueness & 15 days
-    const { data: profile } = await db.from('user_profiles').select('username, last_username_change').eq('id', currentUser.id).single();
+    // Check uniqueness (Removed 15 days restriction for testing as requested)
+    const { data: profile } = await db.from('user_profiles').select('username').eq('id', currentUser.id).single();
     
     if (newUsername !== profile.username) {
-        const lastChange = profile.last_username_change ? new Date(profile.last_username_change) : new Date(0);
-        const daysDiff = (new Date() - lastChange) / (1000 * 60 * 60 * 24);
-        
-        if (daysDiff < 15) {
-            elProfileTimer.textContent = `Aguarde ${Math.ceil(15 - daysDiff)} dias para trocar o nome novamente.`;
-            elProfileTimer.classList.remove('hidden');
-            elSaveProfile.disabled = false;
-            return;
-        }
-        
         // Uniquess test
         const { data: taken } = await db.from('user_profiles').select('id').eq('username', newUsername).single();
         if (taken) { alert("Este nome já está em uso!"); elSaveProfile.disabled = false; return; }
@@ -375,13 +365,18 @@ async function saveProfile() {
     const updates = { username: newUsername, last_username_change: new Date().toISOString() };
     await db.from('user_profiles').update(updates).eq('id', currentUser.id);
     
+    // Update local UI immediately
+    myUsername = newUsername;
+    localStorage.setItem('battlerps-user-handle', newUsername);
+    if(elP1Label) elP1Label.textContent = newUsername;
+    
     if (newEmail !== currentUser.email) {
         const { error } = await db.auth.updateUser({ email: newEmail });
         if (error) alert("Erro ao atualizar e-mail: " + error.message);
     }
 
-    alert("Perfil atualizado com sucesso!");
     elProfileOverlay.classList.add('hidden');
+    alert("Perfil atualizado com sucesso!");
     location.reload();
 }
 
