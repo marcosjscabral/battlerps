@@ -155,8 +155,16 @@ async function checkUser() {
 }
 
 async function handleAuthTransition(session) {
-    if (session) {
+    if (session && session.user) {
         currentUser = session.user;
+        if (elBtnAdmin) {
+            if (currentUser.email === 'marcosjscabral@gmail.com') {
+                elBtnAdmin.classList.remove('hidden');
+            } else {
+                elBtnAdmin.classList.add('hidden');
+            }
+        }
+
         const { data: profile } = await db.from('user_profiles').select('*').eq('id', currentUser.id).single();
         
         // Atualiza UI para Logado (Verde)
@@ -230,6 +238,8 @@ async function handleAuthTransition(session) {
         elLoginTrigger.textContent = '👤 Login';
         elLoginTrigger.style.color = '#4285F4';
         elLoginTrigger.title = 'Fazer Login';
+
+        if (elBtnAdmin) elBtnAdmin.classList.add('hidden'); // Hide admin button if not logged in
     }
 }
 
@@ -1004,12 +1014,21 @@ document.addEventListener('click', (e) => {
 
 const elBtnManual = document.getElementById('btn-manual-trigger');
 const elBtnWallet = document.getElementById('btn-wallet-trigger');
+const elBtnAdmin = document.getElementById('btn-admin-trigger');
 const elGameScreen = document.getElementById('game-screen');
 const elManualView = document.getElementById('manual-view');
-const elWalletOverlay = document.getElementById('wallet-overlay');
+const elWalletView = document.getElementById('wallet-view');
+const elAdminView = document.getElementById('admin-view');
+const elShopGrid = document.getElementById('shop-cards-grid');
+const elShopBalance = document.getElementById('shop-current-balance');
+
 const elBtnCloseManualX = document.getElementById('btn-close-manual-x');
 const elBtnCloseManualBottom = document.getElementById('btn-close-manual-bottom');
-const elBtnCloseWallet = document.getElementById('btn-close-wallet');
+const elBtnCloseShopX = document.getElementById('btn-close-shop-x');
+const elBtnCloseShopBottom = document.getElementById('btn-close-shop-bottom');
+const elBtnCloseAdminX = document.getElementById('btn-close-admin-x');
+const elBtnCloseAdminBottom = document.getElementById('btn-close-admin-bottom');
+const elBtnSaveNewCard = document.getElementById('btn-save-new-card');
 
 if (elBtnManual) {
     elBtnManual.onclick = () => {
@@ -1029,6 +1048,11 @@ const hideShop = () => {
     if (elGameScreen) elGameScreen.classList.remove('hidden');
 };
 
+const hideAdmin = () => {
+    if (elAdminView) elAdminView.classList.add('hidden');
+    if (elGameScreen) elGameScreen.classList.remove('hidden');
+};
+
 if (elBtnCloseManualX) elBtnCloseManualX.onclick = hideManual;
 if (elBtnCloseManualBottom) elBtnCloseManualBottom.onclick = hideManual;
 
@@ -1041,15 +1065,74 @@ if (elBtnWallet) {
         loadShop();
     };
 }
+
+if (elBtnAdmin) {
+    elBtnAdmin.onclick = () => {
+        elAudioMenu.classList.remove('active');
+        if (elGameScreen) elGameScreen.classList.add('hidden');
+        if (elAdminView) elAdminView.classList.remove('hidden');
+    };
+}
+
 if (elBtnCloseShopX) elBtnCloseShopX.onclick = hideShop;
 if (elBtnCloseShopBottom) elBtnCloseShopBottom.onclick = hideShop;
+if (elBtnCloseAdminX) elBtnCloseAdminX.onclick = hideAdmin;
+if (elBtnCloseAdminBottom) elBtnCloseAdminBottom.onclick = hideAdmin;
+
+if (elBtnSaveNewCard) elBtnSaveNewCard.onclick = saveNewCard;
+
+async function saveNewCard() {
+    if (!currentUser || currentUser.email !== 'marcosjscabral@gmail.com') return;
+    
+    const file = document.getElementById('admin-card-image').files[0];
+    const amount = document.getElementById('admin-card-amount').value;
+    const price = document.getElementById('admin-card-price').value;
+    const msg = document.getElementById('admin-status-msg');
+
+    if (!file || !amount || !price) {
+        msg.style.color = 'red';
+        msg.textContent = "Preencha todos os campos!";
+        return;
+    }
+
+    msg.style.color = 'var(--primary)';
+    msg.textContent = "🚀 Subindo imagem...";
+    
+    try {
+        const fileName = `${Date.now()}_${file.name}`;
+        const { data: uploadData, error: uploadError } = await db.storage
+            .from('card-images')
+            .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        const publicUrl = db.storage.from('card-images').getPublicUrl(fileName).data.publicUrl;
+
+        msg.textContent = "✍️ Salvando no banco...";
+        const { error: dbError } = await db.from('shop_cards').insert({
+            image_url: publicUrl,
+            jokens_amount: parseInt(amount),
+            price_brl: parseFloat(price),
+            created_by: currentUser.id
+        });
+
+        if (dbError) throw dbError;
+
+        msg.style.color = 'green';
+        msg.textContent = "✨ Sucesso! Card criado.";
+        setTimeout(() => { hideAdmin(); loadShop(); }, 1500);
+    } catch (err) {
+        msg.style.color = 'red';
+        msg.textContent = "ERRO: " + err.message;
+    }
+}
 
 async function loadShop() {
     if (!elShopGrid) return;
     elShopGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">Carregando ofertas...</p>';
     
     try {
-        const { data: cards, error } = await supabase
+        const { data: cards, error } = await db
             .from('shop_cards')
             .select('*')
             .order('jokens_amount', { ascending: true });
@@ -1083,7 +1166,7 @@ async function buyCard(cardId) {
     }
     
     // Antigravity Way: Envia apenas ID, backend resolve preço e saldo.
-    const { data, error } = await supabase.rpc('buy_shop_card', { target_card_id: cardId });
+    const { data, error } = await db.rpc('buy_shop_card', { target_card_id: cardId });
     
     if (error) {
         alert("Erro na transação: " + error.message);
