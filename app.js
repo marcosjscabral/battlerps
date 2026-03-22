@@ -174,27 +174,28 @@ async function init() {
         if (data.username) {
             myUsername = data.username;
             elP1Label.textContent = myUsername;
-        }
+        } else { elUsernameOverlay.classList.remove('hidden'); }
     } else {
         const initial = 1000.00;
         await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
         updateBalance(initial);
+        elUsernameOverlay.classList.remove('hidden');
     }
 }
 
 async function saveUsername() {
     let raw = elUsernameInput.value.trim();
     const dic = translations[currentLang];
-    
+
     if (raw.length < 3) {
         showError(dic['name-short']);
         return;
     }
-    
+
     const finalHandle = raw.startsWith('@') ? raw : '@' + raw;
     elSaveUsername.disabled = true;
     elSaveUsername.textContent = dic['joining'];
-    
+
     // Check if name is taken
     const { data: takenCheck } = await db.from('user_profiles').select('wallet_address').eq('username', finalHandle).single();
     if (takenCheck && takenCheck.wallet_address !== currentWallet) {
@@ -216,11 +217,6 @@ async function saveUsername() {
     localStorage.setItem('battlerps-user-handle', myUsername);
     elP1Label.textContent = myUsername;
     elUsernameOverlay.classList.add('hidden');
-
-    if (gameMode === 'pvp') {
-        elPvpStatus.classList.remove('hidden');
-        startPvPDiscovery();
-    }
 }
 
 function showError(txt) {
@@ -247,7 +243,7 @@ function startPvPCutdown() {
 function handleTimeout() {
     elPvpTimer.classList.add('hidden');
     if (myMove && !pvpMoveReceived) {
-        botMove = 'rock'; processPayout(false, true); 
+        botMove = 'rock'; processPayout(false, true);
     } else if (!myMove && pvpMoveReceived) {
         myMove = 'rock'; botMove = pvpMoveReceived; processPayout(true, false);
     }
@@ -262,7 +258,7 @@ function applyLanguage(lang) {
     currentLang = lang;
     localStorage.setItem('battlerps-lang', lang);
     elLangTrigger.textContent = langEmojis[lang];
-    elLangDropdown.classList.remove('active'); 
+    elLangDropdown.classList.remove('active');
     const dic = translations[lang];
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
@@ -299,17 +295,12 @@ async function setMode(mode) {
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
     if (mode === 'pvp') {
-        if (!myUsername) {
-            elUsernameOverlay.classList.remove('hidden');
-            return;
-        }
         elPvpStatus.classList.remove('hidden');
         startPvPDiscovery();
     } else {
         elPvpStatus.classList.add('hidden');
         elP2Label.textContent = translations[currentLang]['p2-label'];
         if (pvpChannel) pvpChannel.unsubscribe();
-        elUsernameOverlay.classList.add('hidden');
     }
 }
 
@@ -356,7 +347,7 @@ function startPvPDiscovery() {
 }
 
 function selectMove(move, btn) {
-    if (phase !== 'COMMIT' || (gameMode === 'pvp' && !myUsername)) return;
+    if (phase !== 'COMMIT' || !myUsername) return;
     if (gameMode === 'pvp' && !partnerId) return;
     myMove = move;
     const dic = translations[currentLang];
@@ -364,7 +355,7 @@ function selectMove(move, btn) {
     btn.classList.add('selected');
     elP1Status.textContent = dic['locked'];
     elP1Status.style.color = 'var(--primary)';
-    
+
     if (gameMode === 'bot') {
         setTimeout(() => {
             botMove = ['rock', 'paper', 'scissors'][Math.floor(Math.random() * 3)];
@@ -373,7 +364,7 @@ function selectMove(move, btn) {
             phase = 'REVEAL'; updatePhaseText();
             document.getElementById('move-controls').style.pointerEvents = 'none';
             document.getElementById('move-controls').style.opacity = '0.5';
-            setTimeout(reveal, 500); 
+            setTimeout(reveal, 500);
         }, 400);
     } else {
         pvpChannel.send({ type: 'broadcast', event: 'move', payload: { from: currentWallet, move: myMove } });
@@ -439,7 +430,7 @@ function showResult(result) {
     phase = 'RESULT'; updatePhaseText();
     elResultBanner.classList.remove('hidden');
     elWinnerText.textContent = result.name;
-    elWinnerText.className = ''; 
+    elWinnerText.className = '';
     if (result.winner === 1) elWinnerText.classList.add('text-win');
     else if (result.winner === 2) elWinnerText.classList.add('text-loss');
     else elWinnerText.classList.add('text-draw');
@@ -459,9 +450,26 @@ function resetMatch() {
     elPvpText.textContent = translations[currentLang]['opponent-found'];
 }
 
+function playSfx(el) {
+    if (!el) return;
+    el.currentTime = 0;
+    el.play().catch(e => console.log("SFX error:", e));
+}
+
+function toggleMusic() {
+    const isMuted = !elMusic.muted;
+    elMusic.muted = isMuted;
+    localStorage.setItem('battlerps-muted', isMuted);
+    elMusicBtn.textContent = isMuted ? '🔇' : '🔊';
+    if (!isMuted) {
+        elMusic.play().catch(e => console.log("Music error:", e));
+    } else {
+        elMusic.pause();
+    }
+}
+
 // Events
 elSaveUsername.onclick = saveUsername;
-document.getElementById('btn-cancel-username').onclick = () => setMode('bot');
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };

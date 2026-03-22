@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BATTLE SHAPE | Rock Paper Scissors</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="style.css?v=2.8">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <header>
         <div class="logo">BATTLE SHAPE</div>
@@ -19,7 +23,7 @@
                 <button class="lang-btn" data-lang="pt">🇵🇹 Português</button>
             </div>
         </div>
-        
+
         <div class="header-right">
             <div class="balance-chip">
                 <span id="user-balance">0.00</span> <span>USDC</span>
@@ -43,10 +47,11 @@
     <main>
         <h1 class="game-title" data-i18n="game-title">Battle!</h1>
         <p class="game-subtitle" data-i18n="game-subtitle">Make your move to start the shape match</p>
-        
+
         <div class="mode-selector">
             <button id="btn-mode-bot" class="mode-btn active" data-mode="bot">🆚 BOT</button>
-            <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span class="badge-new">NEW</span></button>
+            <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span
+                    class="badge-new">NEW</span></button>
         </div>
 
         <div id="pvp-status" class="pvp-status-bar hidden">
@@ -64,7 +69,6 @@
                     <input type="text" id="username-input" placeholder="nickname" maxlength="20">
                 </div>
                 <button id="btn-save-username" class="battle-btn">JOIN ARENA</button>
-                <button id="btn-cancel-username" class="battle-btn" style="background: transparent; border: 2px solid var(--primary); color: var(--primary); margin-top: 12px; box-shadow: none;">CANCEL</button>
                 <p id="username-error" class="error-msg hidden"></p>
             </div>
         </div>
@@ -83,7 +87,8 @@
             <div class="players-row">
                 <div class="player-unit">
                     <div class="avatar-box">
-                        <img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" alt="P1" class="avatar-img">
+                        <img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png"
+                            alt="P1" class="avatar-img">
                     </div>
                     <div id="p1-label" class="player-name">@YOU</div>
                     <div id="p1-status" class="player-status" data-i18n="awaiting">Awaiting...</div>
@@ -93,7 +98,8 @@
 
                 <div class="player-unit">
                     <div class="avatar-box">
-                        <img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p2.png" alt="P2" class="avatar-img">
+                        <img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p2.png"
+                            alt="P2" class="avatar-img">
                     </div>
                     <div id="p2-label" class="player-name" data-i18n="p2-label">SHAPE MASTER</div>
                     <div id="p2-status" class="player-status" data-i18n="thinking">Thinking...</div>
@@ -129,4 +135,5 @@
 
     <script src="app.js?v=2.8"></script>
 </body>
+
 </html>
