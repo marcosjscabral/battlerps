@@ -302,6 +302,10 @@ const elConfirmYes = document.getElementById('btn-confirm-yes');
 const elConfirmNo = document.getElementById('btn-confirm-no');
 const elToastSuccess = document.getElementById('toast-success');
 
+const elVsButton = document.getElementById('vs-button');
+const elCountdownOverlay = document.getElementById('countdown-overlay');
+const elCountdownText = document.getElementById('countdown-text');
+
 let authMode = 'login'; // 'login' or 'signup'
 
 function switchAuthMode(mode) {
@@ -876,6 +880,40 @@ function updateVolumeIconSfx(vol) {
 }
 
 // Events
+elVsButton.onclick = triggerMatchReset;
+
+function triggerMatchReset() {
+    playSfx(elSfxClick);
+    elCountdownOverlay.style.display = 'flex';
+    elCountdownOverlay.classList.remove('hidden');
+    
+    let count = 3;
+    elCountdownText.textContent = count;
+    
+    // Bloquear os botões de jogada durante a contagem
+    document.getElementById('move-controls').style.pointerEvents = 'none';
+
+    const intv = setInterval(() => {
+        count--;
+        if (count > 0) {
+            elCountdownText.textContent = count;
+        } else if (count === 0) {
+            elCountdownText.textContent = "GO!";
+            // Reset do placar e do jogo aqui ("aí zera e o jogo pode ser iniciado")
+            scoreWins = 0; scoreDraws = 0; scoreLosses = 0;
+            elScoreWin.textContent = 0; elScoreDraw.textContent = 0; elScoreLoss.textContent = 0;
+            localStorage.setItem('battlerps-score-wins', 0);
+            localStorage.setItem('battlerps-score-draws', 0);
+            localStorage.setItem('battlerps-score-losses', 0);
+            resetMatch();
+        } else {
+            clearInterval(intv);
+            elCountdownOverlay.classList.add('hidden');
+            elCountdownOverlay.style.display = 'none';
+        }
+    }, 900);
+}
+
 elSaveUsername.onclick = saveUsername;
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); applyLanguage(btn.dataset.lang); });
