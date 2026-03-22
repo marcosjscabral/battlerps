@@ -120,9 +120,10 @@ const config = {
 };
 
 const moveUris = {
-    rock: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Raised%20fist/3D/raised_fist_3d.png',
-    paper: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Hand%20with%20fingers%20splayed/3D/hand_with_fingers_splayed_3d.png',
-    scissors: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Victory%20hand/3D/victory_hand_3d.png'
+    rock: 'images/rock.png',
+    paper: 'images/paper.png',
+    scissors: 'images/scissors.png',
+    unknown: 'images/question.png'
 };
 
 let balance = 0;
@@ -458,8 +459,8 @@ function reveal() {
     setTimeout(() => playSfx(elSfxBounce), 800);
     setTimeout(() => {
         h1.style.animation = 'none'; h2.style.animation = 'none';
-        h1.innerHTML = myMove ? `<img src="${moveUris[myMove]}" class="anim-emoji-img">` : '❓';
-        h2.innerHTML = botMove ? `<img src="${moveUris[botMove]}" class="anim-emoji-img">` : '❓';
+        h1.innerHTML = myMove ? `<img src="${moveUris[myMove]}" class="anim-emoji-img">` : `<img src="${moveUris.unknown}" class="anim-emoji-img">`;
+        h2.innerHTML = botMove ? `<img src="${moveUris[botMove]}" class="anim-emoji-img">` : `<img src="${moveUris.unknown}" class="anim-emoji-img">`;
         playSfx(elSfxReveal);
         setTimeout(() => { overlay.classList.add('hidden'); processPayout(); }, 1500);
     }, 1200);
