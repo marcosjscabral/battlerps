@@ -157,29 +157,46 @@ async function handleAuthTransition(session) {
         elLoginTrigger.style.color = '#10b981';
         elLoginTrigger.title = 'Sair da conta';
         
-        if (profile) {
-            myUsername = profile.username;
-            // Se o perfil não tem username, gera um aleatório e salva
-            if (!myUsername) {
-                myUsername = generateRandomUsername();
-                await db.from('user_profiles').update({ username: myUsername }).eq('id', currentUser.id);
-            }
-            updateBalance(profile.balance || 0);
-            elP1Label.textContent = myUsername;
-            if (profile.avatar_url) {
-                document.querySelector('.avatar-img').src = profile.avatar_url;
-                elProfilePreview.src = profile.avatar_url;
-            } else {
-                // Seta imagem padrão caso não tenha
-                const defaultAvatar = 'images/player_default.png';
-                await db.from('user_profiles').update({ avatar_url: defaultAvatar }).eq('id', currentUser.id);
-                document.querySelector('.avatar-img').src = defaultAvatar;
-                elProfilePreview.src = defaultAvatar;
-            }
-            elProfileUser.value = myUsername.replace('@', '');
-            elProfileUser.placeholder = myUsername.replace('@', '');
-            elProfileEmail.value = currentUser.email; 
+        let activeProfile = profile;
+        if (!activeProfile) {
+            // Se for o primeiro login do usuário, nós criamos o perfil dele
+            myUsername = generateRandomUsername();
+            const defaultAvatar = 'images/player_default.png';
+            const novoPerfil = { 
+                id: currentUser.id, 
+                wallet_address: currentWallet, 
+                username: myUsername, 
+                balance: 1000.00,
+                avatar_url: defaultAvatar
+            };
+            await db.from('user_profiles').upsert(novoPerfil, { onConflict: 'id' });
+            activeProfile = novoPerfil;
         }
+
+        myUsername = activeProfile.username;
+        if (!myUsername) {
+            myUsername = generateRandomUsername();
+            await db.from('user_profiles').update({ username: myUsername }).eq('id', currentUser.id);
+            activeProfile.username = myUsername;
+        }
+
+        updateBalance(activeProfile.balance || 0);
+        elP1Label.textContent = myUsername;
+        
+        if (activeProfile.avatar_url) {
+            document.querySelector('.avatar-img').src = activeProfile.avatar_url;
+            elProfilePreview.src = activeProfile.avatar_url;
+        } else {
+            const defaultAvatar = 'images/player_default.png';
+            await db.from('user_profiles').update({ avatar_url: defaultAvatar }).eq('id', currentUser.id);
+            document.querySelector('.avatar-img').src = defaultAvatar;
+            elProfilePreview.src = defaultAvatar;
+        }
+
+        // Popular modal de perfil com os dados reais
+        elProfileUser.value = myUsername.replace('@', '');
+        elProfileUser.placeholder = myUsername.replace('@', '');
+        elProfileEmail.value = currentUser.email; 
     } else {
         currentUser = null;
         myUsername = localStorage.getItem('battlerps-user-handle') || 'Player 1';
@@ -354,20 +371,22 @@ async function saveProfile() {
     
     // Check uniqueness (Removed 15 days restriction for testing as requested)
     const { data: profile } = await db.from('user_profiles').select('username').eq('id', currentUser.id).single();
-    
-    if (newUsername !== profile.username) {
+    const currentUsername = profile ? profile.username : null;
+
+    if (newUsername !== currentUsername) {
         // Uniquess test
         const { data: taken } = await db.from('user_profiles').select('id').eq('username', newUsername).single();
         if (taken) { alert("Este nome já está em uso!"); elSaveProfile.disabled = false; return; }
     }
 
     // Updates
-    const updates = { username: newUsername, last_username_change: new Date().toISOString() };
-    await db.from('user_profiles').update(updates).eq('id', currentUser.id);
+    const updates = { id: currentUser.id, username: newUsername, last_username_change: new Date().toISOString() };
+    await db.from('user_profiles').upsert(updates, { onConflict: 'id' });
     
     // Update local UI immediately
     myUsername = newUsername;
     localStorage.setItem('battlerps-user-handle', newUsername);
+    if(elP1Label) elP1Label.getContext ? elP1Label.textContent = newUsername : null;
     if(elP1Label) elP1Label.textContent = newUsername;
     
     if (newEmail !== currentUser.email) {
