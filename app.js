@@ -1024,9 +1024,76 @@ const hideManual = () => {
     if (elGameScreen) elGameScreen.classList.remove('hidden');
 };
 
+const hideShop = () => {
+    if (elWalletView) elWalletView.classList.add('hidden');
+    if (elGameScreen) elGameScreen.classList.remove('hidden');
+};
+
 if (elBtnCloseManualX) elBtnCloseManualX.onclick = hideManual;
 if (elBtnCloseManualBottom) elBtnCloseManualBottom.onclick = hideManual;
-if (elBtnWallet) elBtnWallet.onclick = () => { elAudioMenu.classList.remove('active'); if(elWalletOverlay) elWalletOverlay.classList.remove('hidden'); };
-if (elBtnCloseWallet) elBtnCloseWallet.onclick = () => { if(elWalletOverlay) elWalletOverlay.classList.add('hidden'); };
+
+if (elBtnWallet) {
+    elBtnWallet.onclick = () => {
+        elAudioMenu.classList.remove('active');
+        if (elGameScreen) elGameScreen.classList.add('hidden');
+        if (elWalletView) elWalletView.classList.remove('hidden');
+        if (elShopBalance) elShopBalance.textContent = formatJK(balance);
+        loadShop();
+    };
+}
+if (elBtnCloseShopX) elBtnCloseShopX.onclick = hideShop;
+if (elBtnCloseShopBottom) elBtnCloseShopBottom.onclick = hideShop;
+
+async function loadShop() {
+    if (!elShopGrid) return;
+    elShopGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">Carregando ofertas...</p>';
+    
+    try {
+        const { data: cards, error } = await supabase
+            .from('shop_cards')
+            .select('*')
+            .order('jokens_amount', { ascending: true });
+        
+        if (error) throw error;
+        
+        if (!cards || cards.length === 0) {
+            elShopGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #999; padding: 40px;">Nenhuma oferta disponível no momento.</p>';
+            return;
+        }
+
+        elShopGrid.innerHTML = '';
+        cards.forEach(card => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'shop-card';
+            cardEl.style.backgroundImage = `url('${card.image_url}')`;
+            cardEl.title = `Comprar ${card.jokens_amount} JK$`;
+            cardEl.onclick = () => buyCard(card.id);
+            elShopGrid.appendChild(cardEl);
+        });
+    } catch (err) {
+        console.error("Erro ao carregar loja:", err);
+        elShopGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 40px;">Erro ao carregar catálogo. Tente novamente.</p>';
+    }
+}
+
+async function buyCard(cardId) {
+    if (!currentUser) {
+        alert("Você precisa estar logado para comprar JK$!");
+        return;
+    }
+    
+    // Antigravity Way: Envia apenas ID, backend resolve preço e saldo.
+    const { data, error } = await supabase.rpc('buy_shop_card', { target_card_id: cardId });
+    
+    if (error) {
+        alert("Erro na transação: " + error.message);
+    } else if (data.success) {
+        alert(`Sucesso! Você adquiriu ${data.amount} JK$.`);
+        // O Realtime já atualizará o saldo global, mas atualizamos o visor da loja também
+        if (elShopBalance) elShopBalance.textContent = formatJK(balance + data.amount);
+    } else {
+        alert("Erro: " + data.error);
+    }
+}
 
 init();

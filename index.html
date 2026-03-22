@@ -292,6 +292,29 @@
                 </div>
             </div>
         </div>
+        <!-- Tela da Wallet (Loja Shop) -->
+        <div id="wallet-view" class="hidden">
+            <div class="shop-container">
+                <div class="shop-header">
+                    <div class="shop-title-row">
+                        <h2>💳 Joken Wallet</h2>
+                        <button id="btn-close-shop-x" class="close-x-btn">&times;</button>
+                    </div>
+                    <div class="shop-balance-banner">
+                        <span class="banner-label">SEU SALDO ATUAL:</span>
+                        <h3 id="shop-current-balance">JK$ --</h3>
+                    </div>
+                </div>
+
+                <div class="shop-grid" id="shop-cards-grid">
+                    <!-- Cards dinâmicos do Supabase -->
+                </div>
+
+                <div class="shop-footer">
+                    <button class="secondary-btn" id="btn-close-shop-bottom">Voltar ao Jogo</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Animation Overlay -->
@@ -299,22 +322,6 @@
         <div class="arena-hands">
             <div id="p1-anim-hand" class="hand"><img src="images/rock.png" class="anim-emoji-img"></div>
             <div id="p2-anim-hand" class="hand"><img src="images/rock.png" class="anim-emoji-img"></div>
-        </div>
-    </div>
-
-
-
-    <!-- Wallet Modal -->
-    <div id="wallet-overlay" class="overlay hidden">
-        <div class="modal auth-modal">
-            <h2>💳 Joken Wallet</h2>
-            <div style="text-align: center; font-size: 0.9rem; color: var(--on-surface-variant); margin: 16px 0;">
-                <p>Acesse a loja e impulsione suas vitórias comprando moedas virtuais Joken (JK$).</p>
-                <button class="primary-btn" style="margin-top: 16px; width: 100%;" onclick="alert('Área de compra disponível em breve!')">Comprar Moedas Jogo (Em breve)</button>
-            </div>
-            <div class="btn-group">
-                <button class="secondary-btn" id="btn-close-wallet">Fechar</button>
-            </div>
         </div>
     </div>
     
