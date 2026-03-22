@@ -260,6 +260,7 @@ if (!currentWallet) {
 
 // DOM Elements
 const elBalance = document.getElementById('user-balance');
+const elBalanceChip = document.getElementById('balance-chip');
 const elPhase = document.getElementById('phase-chip');
 const elReconMsg = document.getElementById('recon-msg');
 const elResultBanner = document.getElementById('result-banner');
@@ -629,6 +630,15 @@ function updatePhaseText() {
 function updateBalance(newBalance) {
     balance = newBalance;
     elBalance.textContent = formatJK(balance);
+    if (elBalanceChip) {
+        if (balance >= 1) {
+            elBalanceChip.classList.add('positive');
+            elBalanceChip.classList.remove('empty');
+        } else {
+            elBalanceChip.classList.add('empty');
+            elBalanceChip.classList.remove('positive');
+        }
+    }
 }
 
 function updateScoreUI() {
