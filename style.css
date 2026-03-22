@@ -108,9 +108,9 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 10px 20p
 @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* Battle Anim Overlay */
-.animation-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; }
-.arena-hands { display: flex; gap: 40px; }
-.hand { font-size: 8rem; }
+.animation-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.arena-hands { display: flex; gap: 15px; max-width: 100vw; justify-content: center; align-items: center; }
+.hand { font-size: 6.5rem; transition: transform 0.2s; }
 #p1-anim-hand { transform: scaleX(-1) rotate(-90deg); }
 #p2-anim-hand { transform: rotate(-90deg); }
 
