@@ -174,12 +174,11 @@ async function init() {
         if (data.username) {
             myUsername = data.username;
             elP1Label.textContent = myUsername;
-        } else { elUsernameOverlay.classList.remove('hidden'); }
+        }
     } else {
         const initial = 1000.00;
         await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
         updateBalance(initial);
-        elUsernameOverlay.classList.remove('hidden');
     }
 }
 
@@ -217,6 +216,11 @@ async function saveUsername() {
     localStorage.setItem('battlerps-user-handle', myUsername);
     elP1Label.textContent = myUsername;
     elUsernameOverlay.classList.add('hidden');
+
+    if (gameMode === 'pvp') {
+        elPvpStatus.classList.remove('hidden');
+        startPvPDiscovery();
+    }
 }
 
 function showError(txt) {
@@ -295,12 +299,17 @@ async function setMode(mode) {
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
     if (mode === 'pvp') {
+        if (!myUsername) {
+            elUsernameOverlay.classList.remove('hidden');
+            return;
+        }
         elPvpStatus.classList.remove('hidden');
         startPvPDiscovery();
     } else {
         elPvpStatus.classList.add('hidden');
         elP2Label.textContent = translations[currentLang]['p2-label'];
         if (pvpChannel) pvpChannel.unsubscribe();
+        elUsernameOverlay.classList.add('hidden');
     }
 }
 
@@ -347,7 +356,7 @@ function startPvPDiscovery() {
 }
 
 function selectMove(move, btn) {
-    if (phase !== 'COMMIT' || !myUsername) return;
+    if (phase !== 'COMMIT' || (gameMode === 'pvp' && !myUsername)) return;
     if (gameMode === 'pvp' && !partnerId) return;
     myMove = move;
     const dic = translations[currentLang];
@@ -452,6 +461,7 @@ function resetMatch() {
 
 // Events
 elSaveUsername.onclick = saveUsername;
+document.getElementById('btn-cancel-username').onclick = () => setMode('bot');
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };
