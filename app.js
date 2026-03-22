@@ -135,6 +135,8 @@ let currentTime = 5;
 let firstPlayedSide = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
+let currentVolume = parseFloat(localStorage.getItem('battlerps-volume')) ?? 0.5;
+let lastVolume = currentVolume > 0 ? currentVolume : 0.5;
 let scoreWins = parseInt(localStorage.getItem('battlerps-score-wins')) || 0;
 let scoreDraws = parseInt(localStorage.getItem('battlerps-score-draws')) || 0;
 let scoreLosses = parseInt(localStorage.getItem('battlerps-score-losses')) || 0;
@@ -177,17 +179,18 @@ const elSfxWin = document.getElementById('sfx-win');
 const elSfxLoss = document.getElementById('sfx-loss');
 const elSfxDraw = document.getElementById('sfx-draw');
 const elSfxClick = document.getElementById('sfx-click');
+const elVolumeSlider = document.getElementById('volume-slider');
 
 async function init() {
     applyLanguage(currentLang);
     updateScoreUI();
-    const isMuted = localStorage.getItem('battlerps-muted') === 'true';
-    if (isMuted) {
-        elMusic.muted = true;
-        elMusicBtn.textContent = '🔇';
-    }
+    elVolumeSlider.value = currentVolume;
+    applyVolume(currentVolume);
 
-    // Use Upsert logic to ensure profile exists
+    // Ensure we sync the button icon initially
+    updateVolumeIcon(currentVolume);
+
+    // Profile check
     const { data, error } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
     if (data) {
         updateBalance(data.balance);
@@ -511,16 +514,37 @@ function playSfx(el) {
 }
 
 function toggleMusic() {
-    playSfx(elSfxClick);
-    const isMuted = !elMusic.muted;
-    elMusic.muted = isMuted;
-    localStorage.setItem('battlerps-muted', isMuted);
-    elMusicBtn.textContent = isMuted ? '🔇' : '🔊';
-    if (!isMuted) {
+    if (elVolumeSlider.value > 0) {
+        lastVolume = elVolumeSlider.value;
+        elVolumeSlider.value = 0;
+    } else {
+        elVolumeSlider.value = lastVolume;
+    }
+    applyVolume(parseFloat(elVolumeSlider.value));
+    if (elVolumeSlider.value > 0) {
         elMusic.play().catch(e => console.log("Music error:", e));
     } else {
         elMusic.pause();
     }
+}
+
+function applyVolume(vol) {
+    currentVolume = vol;
+    const audios = document.querySelectorAll('audio');
+    audios.forEach(a => {
+        a.volume = vol;
+        if (vol > 0) a.muted = false;
+        else a.muted = true;
+    });
+    updateVolumeIcon(vol);
+    localStorage.setItem('battlerps-volume', vol);
+    localStorage.setItem('battlerps-muted', vol === 0);
+}
+
+function updateVolumeIcon(vol) {
+    if (vol == 0) elMusicBtn.textContent = '🔇';
+    else if (vol < 0.5) elMusicBtn.textContent = '🔉';
+    else elMusicBtn.textContent = '🔊';
 }
 
 // Events
@@ -529,6 +553,7 @@ document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectM
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); elLangDropdown.classList.toggle('active'); };
 elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
+elVolumeSlider.oninput = (e) => applyVolume(parseFloat(e.target.value));
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', () => elLangDropdown.classList.remove('active'));
 

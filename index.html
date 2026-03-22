@@ -28,7 +28,12 @@
             <div class="balance-chip">
                 <span id="user-balance">0.00</span> <span>USDC</span>
             </div>
-            <button id="music-toggle" class="music-btn">🔊</button>
+            <div class="volume-control">
+                <button id="music-toggle" class="music-btn">🔊</button>
+                <div class="volume-slider-box">
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5">
+                </div>
+            </div>
         </div>
     </header>
 
