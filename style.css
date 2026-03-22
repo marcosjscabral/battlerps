@@ -179,3 +179,9 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 10px 20p
 .secondary-battle-btn:hover { background: #eee; border-color: #ddd; }
 .menu-item { width: 100%; border: none; background: none; padding: 12px; font-weight: 700; text-align: left; cursor: pointer; color: var(--on-surface); display: flex; align-items: center; gap: 10px; font-size: 0.95rem; }
 .menu-item:hover { background: #f9f9f9; }
+
+/* Toast Success */
+.toast-success { position: fixed; top: 12%; left: 50%; transform: translateX(-50%); background: #10b981; color: white; padding: 16px 32px; border-radius: 30px; font-weight: 800; font-size: 1.1rem; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); z-index: 9999; animation: slideDownTwirl 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; pointer-events: none; }
+@keyframes slideDownTwirl { 0% { top: 0; opacity: 0; transform: translateX(-50%) scale(0.8); } 100% { top: 12%; opacity: 1; transform: translateX(-50%) scale(1); } }
+.toast-success.hide-toast { animation: slideUpFade 0.3s ease-in forwards; }
+@keyframes slideUpFade { 0% { top: 12%; opacity: 1; transform: translateX(-50%) scale(1); } 100% { top: 0; opacity: 0; transform: translateX(-50%) scale(0.8); } }

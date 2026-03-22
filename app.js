@@ -300,6 +300,7 @@ const elConfirmTitle = document.getElementById('confirm-title');
 const elConfirmMsg = document.getElementById('confirm-msg');
 const elConfirmYes = document.getElementById('btn-confirm-yes');
 const elConfirmNo = document.getElementById('btn-confirm-no');
+const elToastSuccess = document.getElementById('toast-success');
 
 let authMode = 'login'; // 'login' or 'signup'
 
@@ -382,7 +383,7 @@ async function saveProfile() {
     }
 
     // Updates
-    const updates = { id: currentUser.id, username: newUsername, last_username_change: new Date().toISOString() };
+    const updates = { id: currentUser.id, username: newUsername };
     const { error: saveError } = await db.from('user_profiles').upsert(updates);
     
     if (saveError) {
@@ -394,7 +395,6 @@ async function saveProfile() {
     // Update local UI immediately
     myUsername = newUsername;
     localStorage.setItem('battlerps-user-handle', newUsername);
-    if(elP1Label) elP1Label.getContext ? elP1Label.textContent = newUsername : null;
     if(elP1Label) elP1Label.textContent = newUsername;
     
     if (newEmail !== currentUser.email) {
@@ -402,9 +402,18 @@ async function saveProfile() {
         if (error) alert("Erro ao atualizar e-mail: " + error.message);
     }
 
+    elProfileUser.readOnly = true; elProfileUser.classList.add('readonly-input'); elProfileUser.classList.remove('edit-active');
+    elProfileEmail.readOnly = true; elProfileEmail.classList.add('readonly-input'); elProfileEmail.classList.remove('edit-active');
+
     elProfileOverlay.classList.add('hidden');
-    alert("Perfil atualizado com sucesso!");
-    location.reload();
+    elSaveProfile.disabled = false;
+    
+    // Animating success toast for 1.5s
+    elToastSuccess.classList.remove('hidden', 'hide-toast');
+    setTimeout(() => {
+        elToastSuccess.classList.add('hide-toast');
+        setTimeout(() => elToastSuccess.classList.add('hidden'), 300);
+    }, 1500);
 }
 
 function unlockField(el) {
