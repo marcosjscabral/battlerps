@@ -1004,14 +1004,29 @@ document.addEventListener('click', (e) => {
 
 const elBtnManual = document.getElementById('btn-manual-trigger');
 const elBtnWallet = document.getElementById('btn-wallet-trigger');
-const elManualOverlay = document.getElementById('manual-overlay');
+const elGameScreen = document.getElementById('game-screen');
+const elManualView = document.getElementById('manual-view');
 const elWalletOverlay = document.getElementById('wallet-overlay');
-const elBtnCloseManual = document.getElementById('btn-close-manual');
+const elBtnCloseManualX = document.getElementById('btn-close-manual-x');
+const elBtnCloseManualBottom = document.getElementById('btn-close-manual-bottom');
 const elBtnCloseWallet = document.getElementById('btn-close-wallet');
 
-if (elBtnManual) elBtnManual.onclick = () => { elAudioMenu.classList.remove('active'); elManualOverlay.classList.remove('hidden'); };
-if (elBtnWallet) elBtnWallet.onclick = () => { elAudioMenu.classList.remove('active'); elWalletOverlay.classList.remove('hidden'); };
-if (elBtnCloseManual) elBtnCloseManual.onclick = () => elManualOverlay.classList.add('hidden');
-if (elBtnCloseWallet) elBtnCloseWallet.onclick = () => elWalletOverlay.classList.add('hidden');
+if (elBtnManual) {
+    elBtnManual.onclick = () => {
+        elAudioMenu.classList.remove('active');
+        if (elGameScreen) elGameScreen.classList.add('hidden');
+        if (elManualView) elManualView.classList.remove('hidden');
+    };
+}
+
+const hideManual = () => {
+    if (elManualView) elManualView.classList.add('hidden');
+    if (elGameScreen) elGameScreen.classList.remove('hidden');
+};
+
+if (elBtnCloseManualX) elBtnCloseManualX.onclick = hideManual;
+if (elBtnCloseManualBottom) elBtnCloseManualBottom.onclick = hideManual;
+if (elBtnWallet) elBtnWallet.onclick = () => { elAudioMenu.classList.remove('active'); if(elWalletOverlay) elWalletOverlay.classList.remove('hidden'); };
+if (elBtnCloseWallet) elBtnCloseWallet.onclick = () => { if(elWalletOverlay) elWalletOverlay.classList.add('hidden'); };
 
 init();

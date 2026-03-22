@@ -90,11 +90,13 @@
     </audio>
 
     <main>
-        <div class="mode-selector">
-            <button id="btn-mode-bot" class="mode-btn active" data-mode="bot">🆚 BOT</button>
-            <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span
-                    class="badge-new">NEW</span></button>
-        </div>
+        <!-- Conteúdo do Jogo -->
+        <div id="game-screen">
+            <div class="mode-selector">
+                <button id="btn-mode-bot" class="mode-btn active" data-mode="bot">🆚 BOT</button>
+                <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span
+                        class="badge-new">NEW</span></button>
+            </div>
 
         <div id="pvp-status" class="pvp-status-bar hidden">
             <span class="searching-dot"></span>
@@ -257,6 +259,39 @@
         </div>
 
         <div id="recon-msg" class="recon-payout hidden" data-i18n="syncing">SYNCING PAYOUT...</div>
+        </div>
+
+        <!-- Tela do Manual (Substitui a principal) -->
+        <div id="manual-view" class="hidden">
+            <div class="manual-container">
+                <div class="manual-header">
+                    <h2>📖 Manual do Jogo</h2>
+                    <button id="btn-close-manual-x" class="close-x-btn">&times;</button>
+                </div>
+                
+                <div class="manual-content">
+                    <p><strong>Cores da Carteira Joken (JK$):</strong></p>
+                    <ul class="manual-list">
+                        <li><span style="color: #10b981; font-weight: bold;">Verde:</span> Valor Real (Usuários logados com saldo)</li>
+                        <li><span style="color: #f57c00; font-weight: bold;">Laranja:</span> Saldo Fictício (Vitórias no modo deslogado)</li>
+                        <li><span style="color: #9e9e9e; font-weight: bold;">Cinza:</span> Saldo Zerado (Você não possui JK$)</li>
+                    </ul>
+                    
+                    <p><strong>Regras de Economia:</strong></p>
+                    <ul class="manual-list">
+                        <li>Vitória: + JK$ 10</li>
+                        <li>Derrota: - JK$ 10</li>
+                        <li>Empate: - JK$ 5</li>
+                    </ul>
+
+                    <p><em>Mais novidades e regras serão adicionadas aqui em breve!</em></p>
+                </div>
+
+                <div class="manual-footer">
+                    <button class="primary-btn" id="btn-close-manual-bottom">Fechar e Voltar ao Jogo</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Animation Overlay -->
@@ -267,24 +302,7 @@
         </div>
     </div>
 
-    <!-- Manual Modal -->
-    <div id="manual-overlay" class="overlay hidden">
-        <div class="modal auth-modal" style="text-align: left;">
-            <h2>📖 Manual do Jogo</h2>
-            <div style="font-size: 0.9rem; color: var(--on-surface-variant); line-height: 1.5; margin: 16px 0;">
-                <p><strong>Cores da Carteira Joken (JK$):</strong></p>
-                <ul style="margin-top: 8px; margin-left: 20px; margin-bottom: 12px;">
-                    <li><span style="color: #10b981; font-weight: bold;">Verde:</span> Valor Real (Usuários logados com saldo)</li>
-                    <li><span style="color: #f57c00; font-weight: bold;">Laranja:</span> Saldo Fictício (Vitórias no modo deslogado)</li>
-                    <li><span style="color: #9e9e9e; font-weight: bold;">Cinza:</span> Saldo Zerado (Você não possui JK$)</li>
-                </ul>
-                <p><em>Mais novidades e regras serão adicionadas aqui em breve!</em></p>
-            </div>
-            <div class="btn-group">
-                <button class="secondary-btn" id="btn-close-manual">Fechar</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Wallet Modal -->
     <div id="wallet-overlay" class="overlay hidden">
