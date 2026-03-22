@@ -34,10 +34,7 @@ header { display: flex; justify-content: space-between; align-items: center; pad
 .custom-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 .custom-slider::-moz-range-thumb { width: 14px; height: 14px; background: var(--primary); border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
-main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-
-.game-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 2.2rem; color: var(--on-surface); margin-bottom: 4px; text-align: center; }
-.game-subtitle { color: var(--on-surface-variant); font-size: 0.95rem; margin-bottom: 24px; text-align: center; }
+main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 10px 20px 20px 20px; display: flex; flex-direction: column; align-items: center; }
 
 .mode-selector { display: flex; background: white; padding: 4px; border-radius: 30px; border: 1.5px solid #eee; margin-bottom: 16px; width: 100%; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 .mode-btn { flex: 1; padding: 10px; border: none; background: transparent; font-weight: 700; border-radius: 26px; cursor: pointer; transition: all 0.3s; color: var(--on-surface-variant); font-size: 0.9rem; }
