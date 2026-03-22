@@ -325,6 +325,12 @@ async function signInWithEmail() {
 async function signOut() {
     const ok = await showConfirm("LOGOUT", "Tem certeza que deseja sair da conta?");
     if (!ok) return;
+    
+    // Zerar Placar no LocalStorage
+    localStorage.removeItem('battlerps-score-wins');
+    localStorage.removeItem('battlerps-score-draws');
+    localStorage.removeItem('battlerps-score-losses');
+    
     await db.auth.signOut();
     location.reload();
 }
