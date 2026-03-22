@@ -220,9 +220,9 @@ function generateRandomUsername() {
 }
 
 let storedVolMusic = localStorage.getItem('battlerps-volume-music');
-let currentVolumeMusic = storedVolMusic !== null ? parseFloat(storedVolMusic) : 0.4;
-if (isNaN(currentVolumeMusic)) currentVolumeMusic = 0.4;
-let lastVolumeMusic = currentVolumeMusic > 0 ? currentVolumeMusic : 0.4;
+let currentVolumeMusic = storedVolMusic !== null ? parseFloat(storedVolMusic) : 0.1;
+if (isNaN(currentVolumeMusic)) currentVolumeMusic = 0.1;
+let lastVolumeMusic = currentVolumeMusic > 0 ? currentVolumeMusic : 0.1;
 
 let storedVolSfx = localStorage.getItem('battlerps-volume-sfx');
 let currentVolumeSfx = storedVolSfx !== null ? parseFloat(storedVolSfx) : 0.6;
