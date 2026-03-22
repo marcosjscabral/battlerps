@@ -151,6 +151,12 @@ async function handleAuthTransition(session) {
     if (session) {
         currentUser = session.user;
         const { data: profile } = await db.from('user_profiles').select('*').eq('id', currentUser.id).single();
+        
+        // Atualiza UI para Logado (Verde)
+        elLoginTrigger.textContent = '👤';
+        elLoginTrigger.style.color = '#10b981'; // Verde (Success)
+        elLoginTrigger.title = 'Sair da conta';
+        
         if (profile) {
             myUsername = profile.username || currentUser.email.split('@')[0];
             updateBalance(profile.balance || 0);
@@ -163,6 +169,11 @@ async function handleAuthTransition(session) {
         currentUser = null;
         myUsername = localStorage.getItem('battlerps-user-handle') || 'Guest';
         elP1Label.textContent = myUsername;
+        
+        // Atualiza UI para Deslogado (Azul)
+        elLoginTrigger.textContent = '👤 Login';
+        elLoginTrigger.style.color = '#4285F4'; // Azul (Opcional, ou cor padrão do CSS)
+        elLoginTrigger.title = 'Fazer Login';
     }
 }
 
