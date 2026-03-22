@@ -271,6 +271,8 @@ if (!currentWallet) {
 // DOM Elements
 const elBalance = document.getElementById('user-balance');
 const elBalanceChip = document.getElementById('balance-chip');
+const elShopBalanceChip = document.getElementById('shop-balance-chip');
+const elShopBalance = document.getElementById('shop-current-balance');
 const elPhase = document.getElementById('phase-chip');
 const elReconMsg = document.getElementById('recon-msg');
 const elResultBanner = document.getElementById('result-banner');
@@ -676,17 +678,25 @@ function updatePhaseText() {
 
 function updateBalance(newBalance) {
     balance = newBalance;
-    elBalance.textContent = formatJK(balance);
-    if (elBalanceChip) {
-        elBalanceChip.classList.remove('positive', 'empty', 'fictitious');
-        if (balance == 0) {
-            elBalanceChip.classList.add('empty');
+    const formatted = formatJK(balance);
+    if (elBalance) elBalance.textContent = formatted;
+    if (elShopBalance) elShopBalance.textContent = formatted;
+    
+    // Sync Chip colors
+    const applyChipClass = (chip) => {
+        if (!chip) return;
+        chip.classList.remove('positive', 'empty', 'fictitious');
+        if (balance <= 0) {
+            chip.classList.add('empty');
         } else if (currentUser) {
-            elBalanceChip.classList.add('positive');
+            chip.classList.add('positive');
         } else {
-            elBalanceChip.classList.add('fictitious');
+            chip.classList.add('fictitious');
         }
-    }
+    };
+    
+    applyChipClass(elBalanceChip);
+    applyChipClass(elShopBalanceChip);
 }
 
 function updateScoreUI() {
@@ -1057,9 +1067,6 @@ const elGameScreen = document.getElementById('game-screen');
 const elManualView = document.getElementById('manual-view');
 const elWalletView = document.getElementById('wallet-view');
 const elAdminView = document.getElementById('admin-view');
-const elShopGrid = document.getElementById('shop-cards-grid');
-const elShopBalance = document.getElementById('shop-current-balance');
-
 const elBtnCloseManualX = document.getElementById('btn-close-manual-x');
 const elBtnCloseManualBottom = document.getElementById('btn-close-manual-bottom');
 const elBtnCloseShopX = document.getElementById('btn-close-shop-x');
