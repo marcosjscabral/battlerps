@@ -110,9 +110,9 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 10px 20p
 /* Battle Anim Overlay */
 .animation-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); z-index: 500; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .arena-hands { display: flex; gap: 15px; max-width: 100vw; justify-content: center; align-items: center; }
-.hand { font-size: 6.5rem; transition: transform 0.2s; }
-#p1-anim-hand { transform: scaleX(-1) rotate(-90deg); }
-#p2-anim-hand { transform: rotate(-90deg); }
+.hand { font-size: 6.5rem; width: 6.5rem; height: 6.5rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; transform-origin: center center; }
+#p1-anim-hand { transform: scaleX(-1) rotate(-90deg); margin-left: 10px; }
+#p2-anim-hand { transform: rotate(-90deg); margin-right: 10px; }
 
 @keyframes hand-bounce-p1 { 0%, 100% { transform: scaleX(-1) rotate(-90deg) translateX(0); } 50% { transform: scaleX(-1) rotate(-90deg) translateX(-20px); } }
 @keyframes hand-bounce-p2 { 0%, 100% { transform: rotate(-90deg) translateX(0); } 50% { transform: rotate(-90deg) translateX(-20px); } }
