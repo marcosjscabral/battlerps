@@ -169,10 +169,16 @@ async function handleAuthTransition(session) {
             if (profile.avatar_url) {
                 document.querySelector('.avatar-img').src = profile.avatar_url;
                 elProfilePreview.src = profile.avatar_url;
+            } else {
+                // Seta imagem padrão caso não tenha
+                const defaultAvatar = 'images/player_default.png';
+                await db.from('user_profiles').update({ avatar_url: defaultAvatar }).eq('id', currentUser.id);
+                document.querySelector('.avatar-img').src = defaultAvatar;
+                elProfilePreview.src = defaultAvatar;
             }
             elProfileUser.value = myUsername.replace('@', '');
             elProfileUser.placeholder = myUsername.replace('@', '');
-            elProfileEmail.value = currentUser.email;
+            elProfileEmail.value = currentUser.email; 
         }
     } else {
         currentUser = null;
@@ -829,7 +835,10 @@ if (elSaveProfile) elSaveProfile.onclick = saveProfile;
 if (elAvatarUpload) elAvatarUpload.onchange = (e) => { if (e.target.files[0]) uploadAvatar(e.target.files[0]); };
 if (elEditUserBtn) elEditUserBtn.onclick = () => unlockField(elProfileUser);
 if (elEditEmailBtn) elEditEmailBtn.onclick = () => unlockField(elProfileEmail);
-if (elChangePassBtn) elChangePassBtn.onclick = requestPasswordChange;
+if (elChangePassBtn) elChangePassBtn.onclick = () => {
+    elAudioMenu.classList.remove('active');
+    requestPasswordChange();
+};
 
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', (e) => { 
