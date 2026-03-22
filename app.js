@@ -251,15 +251,25 @@ async function signInWithEmail() {
     const password = elPassInput.value.trim();
     if (!email || !password) return alert("Preencha email e senha");
     
-    // Tenta login, se falhar tenta cadastro
-    const { data, error } = await db.auth.signInWithPassword({ email, password });
-    if (error) {
-        const { error: signUpErr } = await db.auth.signUp({ email, password });
-        if (signUpErr) alert(signUpErr.message);
-        else alert("Conta criada! Verifique seu email ou tente logar.");
+    elAuthEmailBtn.disabled = true;
+    
+    if (authMode === 'signup') {
+        // Fluxo de Cadastro
+        const { data, error } = await db.auth.signUp({ email, password });
+        if (error) alert(error.message);
+        else alert("Conta criada! Verifique seu e-mail para confirmar a conta.");
     } else {
-        elAuthOverlay.classList.add('hidden');
+        // Fluxo de Login
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) {
+            if (error.status === 400) alert("Email ou senha incorretos. Verifique seus dados.");
+            else alert(error.message);
+        } else {
+            elAuthOverlay.classList.add('hidden');
+        }
     }
+    
+    elAuthEmailBtn.disabled = false;
 }
 
 async function signOut() {
