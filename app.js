@@ -171,6 +171,7 @@ async function handleAuthTransition(session) {
                 elProfilePreview.src = profile.avatar_url;
             }
             elProfileUser.value = myUsername.replace('@', '');
+            elProfileUser.placeholder = myUsername.replace('@', '');
             elProfileEmail.value = currentUser.email;
         }
     } else {
