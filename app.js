@@ -273,6 +273,7 @@ const elBalance = document.getElementById('user-balance');
 const elBalanceChip = document.getElementById('balance-chip');
 const elShopBalanceChip = document.getElementById('shop-balance-chip');
 const elShopBalance = document.getElementById('shop-current-balance');
+const elShopGrid = document.getElementById('shop-cards-grid');
 const elPhase = document.getElementById('phase-chip');
 const elReconMsg = document.getElementById('recon-msg');
 const elResultBanner = document.getElementById('result-banner');
