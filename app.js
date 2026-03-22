@@ -119,7 +119,11 @@ const config = {
     platformFee: 0.05
 };
 
-const moveEmojis = { rock: '✊', paper: '🖐️', scissors: '✌️' };
+const moveUris = {
+    rock: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Raised%20fist/3D/raised_fist_3d.png',
+    paper: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Hand%20with%20fingers%20splayed/3D/hand_with_fingers_splayed_3d.png',
+    scissors: 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Victory%20hand/3D/victory_hand_3d.png'
+};
 
 let balance = 0;
 let myMove = null;
@@ -446,7 +450,7 @@ function selectMove(move, btn) {
 function reveal() {
     phase = 'BATTLE'; updatePhaseText();
     overlay.classList.remove('hidden');
-    h1.textContent = '✊'; h2.textContent = '✊';
+    h1.innerHTML = `<img src="${moveUris.rock}" class="anim-emoji-img">`; h2.innerHTML = `<img src="${moveUris.rock}" class="anim-emoji-img">`;
     h1.style.animation = 'hand-bounce-p1 0.4s ease-in-out infinite';
     h2.style.animation = 'hand-bounce-p2 0.4s ease-in-out infinite';
     playSfx(elSfxBounce);
@@ -454,7 +458,8 @@ function reveal() {
     setTimeout(() => playSfx(elSfxBounce), 800);
     setTimeout(() => {
         h1.style.animation = 'none'; h2.style.animation = 'none';
-        h1.textContent = moveEmojis[myMove] || '❓'; h2.textContent = moveEmojis[botMove] || '❓';
+        h1.innerHTML = myMove ? `<img src="${moveUris[myMove]}" class="anim-emoji-img">` : '❓';
+        h2.innerHTML = botMove ? `<img src="${moveUris[botMove]}" class="anim-emoji-img">` : '❓';
         playSfx(elSfxReveal);
         setTimeout(() => { overlay.classList.add('hidden'); processPayout(); }, 1500);
     }, 1200);
