@@ -135,7 +135,11 @@ let currentTime = 5;
 let firstPlayedSide = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
-let currentVolume = parseFloat(localStorage.getItem('battlerps-volume')) ?? 0.5;
+
+let storedVol = localStorage.getItem('battlerps-volume');
+let currentVolume = storedVol !== null ? parseFloat(storedVol) : 0.5;
+if (isNaN(currentVolume)) currentVolume = 0.5;
+
 let lastVolume = currentVolume > 0 ? currentVolume : 0.5;
 let scoreWins = parseInt(localStorage.getItem('battlerps-score-wins')) || 0;
 let scoreDraws = parseInt(localStorage.getItem('battlerps-score-draws')) || 0;
