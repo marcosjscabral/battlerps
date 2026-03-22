@@ -37,7 +37,12 @@ const translations = {
         'joining': 'JOINING ARENA...',
         'score-wins': 'WINS',
         'score-draws': 'DRAWS',
-        'score-losses': 'LOSSES'
+        'score-losses': 'LOSSES',
+        'menu-profile': 'Profile',
+        'menu-password': 'Change Password',
+        'menu-wallet': 'Wallet Shop',
+        'menu-manual': 'Manual',
+        'menu-admin': 'Admin Center'
     },
     es: {
         'game-title': '¡Batalla!',
@@ -72,7 +77,12 @@ const translations = {
         'joining': 'ENTRANDO...',
         'score-wins': 'VICTORIAS',
         'score-draws': 'EMPATES',
-        'score-losses': 'DERROTAS'
+        'score-losses': 'DERROTAS',
+        'menu-profile': 'Perfil',
+        'menu-password': 'Cambiar Contraseña',
+        'menu-wallet': 'Tienda Wallet',
+        'menu-manual': 'Manual',
+        'menu-admin': 'Centro Admin'
     },
     pt: {
         'game-title': 'Batalha!',
@@ -107,7 +117,12 @@ const translations = {
         'joining': 'ENTRANDO...',
         'score-wins': 'VITÓRIAS',
         'score-draws': 'EMPATES',
-        'score-losses': 'DERROTAS'
+        'score-losses': 'DERROTAS',
+        'menu-profile': 'Perfil',
+        'menu-password': 'Trocar Senha',
+        'menu-wallet': 'Wallet Shop',
+        'menu-manual': 'Manual',
+        'menu-admin': 'Centro Admin'
     }
 };
 
@@ -164,6 +179,9 @@ async function handleAuthTransition(session) {
                 elBtnAdmin.classList.add('hidden');
             }
         }
+        
+        if (elProfileTrigger) elProfileTrigger.classList.remove('hidden');
+        if (elChangePassBtn) elChangePassBtn.classList.remove('hidden');
 
         const { data: profile } = await db.from('user_profiles').select('*').eq('id', currentUser.id).single();
         
@@ -240,6 +258,8 @@ async function handleAuthTransition(session) {
         elLoginTrigger.title = 'Fazer Login';
 
         if (elBtnAdmin) elBtnAdmin.classList.add('hidden'); // Hide admin button if not logged in
+        if (elProfileTrigger) elProfileTrigger.classList.add('hidden');
+        if (elChangePassBtn) elChangePassBtn.classList.add('hidden');
     }
 }
 
