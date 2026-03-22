@@ -276,6 +276,11 @@ const elProfileTimer = document.getElementById('profile-timer-msg');
 const elEditUserBtn = document.getElementById('btn-edit-username');
 const elEditEmailBtn = document.getElementById('btn-edit-email');
 const elChangePassBtn = document.getElementById('btn-change-password-trigger');
+const elConfirmOverlay = document.getElementById('confirm-overlay');
+const elConfirmTitle = document.getElementById('confirm-title');
+const elConfirmMsg = document.getElementById('confirm-msg');
+const elConfirmYes = document.getElementById('btn-confirm-yes');
+const elConfirmNo = document.getElementById('btn-confirm-no');
 
 let authMode = 'login'; // 'login' or 'signup'
 
@@ -318,8 +323,21 @@ async function signInWithEmail() {
 }
 
 async function signOut() {
+    const ok = await showConfirm("LOGOUT", "Tem certeza que deseja sair da conta?");
+    if (!ok) return;
     await db.auth.signOut();
     location.reload();
+}
+
+function showConfirm(title, msg) {
+    return new Promise((resolve) => {
+        elConfirmTitle.textContent = title;
+        elConfirmMsg.textContent = msg;
+        elConfirmOverlay.classList.remove('hidden');
+        
+        elConfirmYes.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(true); };
+        elConfirmNo.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(false); };
+    });
 }
 
 async function saveProfile() {
@@ -369,9 +387,10 @@ function unlockField(el) {
 }
 
 async function requestPasswordChange() {
-    if (confirm("Deseja receber um link de redefinição de senha por e-mail?")) {
+    const ok = await showConfirm("SENHA", "Deseja receber um link de redefinição no seu e-mail?");
+    if (ok) {
         const { error } = await db.auth.resetPasswordForEmail(currentUser.email);
-        if (error) alert("Erro: " + error.message);
+        if (error) alert("Erro: " + error.message); // Custom alert can be next
         else alert("Link enviado! Verifique sua caixa de entrada.");
     }
 }
@@ -380,12 +399,11 @@ async function uploadAvatar(file) {
     if (!currentUser) return;
     const fileExt = file.name.split('.').pop();
     const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
 
     const { data, error: uploadError } = await db.storage.from('avatars').upload(fileName, file);
     if (uploadError) {
         if (uploadError.message === 'Bucket not found') {
-            alert("Atenção: O storage 'avatars' não foi encontrado no seu Supabase. \n\nPor favor, vá em Dashboard > Storage e crie um bucket chamado 'avatars' com acesso público.");
+            showConfirm("STORAGE", "Bucket 'avatars' não encontrado. Crie-o no Supabase como Público.");
         } else {
             alert("Erro no upload: " + uploadError.message);
         }
@@ -822,8 +840,11 @@ elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
 elSfxBtn.onclick = (e) => { e.stopPropagation(); toggleSfx(); };
 elMusicSlider.oninput = (e) => applyVolumeMusic(parseFloat(e.target.value));
 elSfxSlider.oninput = (e) => applyVolumeSfx(parseFloat(e.target.value));
-if (elLoginTrigger) elLoginTrigger.onclick = () => {
-    if (currentUser) { if(confirm("Sair da conta?")) signOut(); }
+if (elLoginTrigger) elLoginTrigger.onclick = async () => {
+    if (currentUser) { 
+        const ok = await showConfirm("LOGOUT", "Sair da conta?");
+        if(ok) signOut(); 
+    }
     else elAuthOverlay.classList.remove('hidden');
 };
 if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
