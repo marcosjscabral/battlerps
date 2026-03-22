@@ -798,9 +798,12 @@ if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
 if (elTabLogin) elTabLogin.onclick = () => switchAuthMode('login');
 if (elTabSignup) elTabSignup.onclick = () => switchAuthMode('signup');
 if (elProfileTrigger) elProfileTrigger.onclick = () => {
-    if (!currentUser) return alert("Logue para editar seu perfil!");
-    elProfileOverlay.classList.remove('hidden');
     elAudioMenu.classList.remove('active');
+    if (!currentUser) {
+        elAuthOverlay.classList.remove('hidden');
+    } else {
+        elProfileOverlay.classList.remove('hidden');
+    }
 };
 if (elSaveProfile) elSaveProfile.onclick = saveProfile;
 if (elAvatarUpload) elAvatarUpload.onchange = (e) => { if (e.target.files[0]) uploadAvatar(e.target.files[0]); };
