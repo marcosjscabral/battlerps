@@ -126,6 +126,13 @@ const moveUris = {
     unknown: 'images/question.png'
 };
 
+// Economia Joken (JK$)
+const JOKEN_RATE = 100; // Constante Global
+
+function formatJK(val) {
+    return 'JK$ ' + Math.floor(val).toLocaleString('pt-BR');
+}
+
 let balance = 0;
 let myMove = null;
 let botMove = null;
@@ -199,7 +206,21 @@ async function handleAuthTransition(session) {
         elProfileUser.value = myUsername.replace('@', '');
         elProfileUser.placeholder = myUsername.replace('@', '');
         elProfileEmail.value = currentUser.email; 
+        
+        // Ativar Realtime Listener para o Ledger/Wallet Híbrido da Economia JK$
+        if (window.walletChannel) window.walletChannel.unsubscribe();
+        window.walletChannel = db.channel('joken_economy_sync')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `id=eq.${currentUser.id}` }, payload => {
+                if (payload.new.balance !== undefined && payload.new.balance !== balance) {
+                    updateBalance(payload.new.balance);
+                }
+            }).subscribe();
+
     } else {
+        if (window.walletChannel) {
+            window.walletChannel.unsubscribe();
+            window.walletChannel = null;
+        }
         currentUser = null;
         myUsername = localStorage.getItem('battlerps-user-handle') || 'Player 1';
         elP1Label.textContent = myUsername;
@@ -607,7 +628,7 @@ function updatePhaseText() {
 
 function updateBalance(newBalance) {
     balance = newBalance;
-    elBalance.textContent = balance.toFixed(2);
+    elBalance.textContent = formatJK(balance);
 }
 
 function updateScoreUI() {
@@ -619,7 +640,7 @@ function updateScoreUI() {
 function triggerFloatingPayout(amount, type) {
     const float = document.createElement('div');
     float.className = 'floating-payout';
-    float.textContent = (amount > 0 ? '+' : '') + amount.toFixed(2) + ' USDC';
+    float.textContent = (amount > 0 ? '+' : '-') + formatJK(Math.abs(amount));
     float.classList.add(type === 'win' ? 'text-win' : 'text-loss');
     float.style.left = '50%'; float.style.top = '45%';
     document.body.appendChild(float);
@@ -760,6 +781,14 @@ function processPayout(forcedLoss = false, forcedWin = false) {
         if (result.winner === 1) { newBalance += (config.stake * result.mult - config.stake); triggerFloatingPayout(config.stake * result.mult, 'win'); }
         else if (result.winner === 2) { newBalance -= config.stake; triggerFloatingPayout(-config.stake, 'loss'); }
         setTimeout(async () => {
+            // Ledger: Sistema de rastreabilidade (Transações JK$)
+            if (currentUser) {
+                if (result.winner === 1) {
+                    await db.from('transactions').insert({ user_id: currentUser.id, amount: (config.stake * result.mult - config.stake), type: 'game_win', description: 'Vitória no Joken' });
+                } else if (result.winner === 2) {
+                    await db.from('transactions').insert({ user_id: currentUser.id, amount: -config.stake, type: 'game_bet', description: 'Derrota no Joken' });
+                }
+            }
             updateBalance(newBalance);
             await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
             await db.from('matches').insert([{ player_move: myMove, bot_move: botMove, outcome: result.name, stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0, user_id: currentWallet }]);
