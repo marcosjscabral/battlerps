@@ -194,14 +194,14 @@
                 <div class="input-stack">
                     <div class="input-group">
                         <span class="handle-prefix">@</span>
-                        <input type="text" id="profile-username" placeholder="nickname" maxlength="20">
+                        <input type="text" id="profile-username" placeholder="Player 1" maxlength="20" readonly class="readonly-input">
+                        <button class="edit-btn-inline" id="btn-edit-username">✏️</button>
                     </div>
                     <div class="input-group">
-                        <input type="email" id="profile-email" placeholder="E-mail de acesso">
+                        <input type="email" id="profile-email" placeholder="E-mail de acesso" readonly class="readonly-input">
+                        <button class="edit-btn-inline" id="btn-edit-email">✏️</button>
                     </div>
-                    <div class="input-group">
-                        <input type="password" id="profile-password" placeholder="Nova senha (opcional)">
-                    </div>
+                    <button id="btn-change-password-trigger" class="secondary-battle-btn">TROCAR SENHA</button>
                 </div>
                 
                 <p id="profile-timer-msg" style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px; font-weight: 600;" class="hidden"></p>

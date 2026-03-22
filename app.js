@@ -262,11 +262,13 @@ const elProfileOverlay = document.getElementById('profile-overlay');
 const elProfileTrigger = document.getElementById('btn-profile-trigger');
 const elProfileUser = document.getElementById('profile-username');
 const elProfileEmail = document.getElementById('profile-email');
-const elProfilePass = document.getElementById('profile-password');
 const elProfilePreview = document.getElementById('profile-avatar-preview');
 const elAvatarUpload = document.getElementById('avatar-upload');
 const elSaveProfile = document.getElementById('btn-save-profile');
 const elProfileTimer = document.getElementById('profile-timer-msg');
+const elEditUserBtn = document.getElementById('btn-edit-username');
+const elEditEmailBtn = document.getElementById('btn-edit-email');
+const elChangePassBtn = document.getElementById('btn-change-password-trigger');
 
 let authMode = 'login'; // 'login' or 'signup'
 
@@ -318,7 +320,6 @@ async function saveProfile() {
     elSaveProfile.disabled = true;
     const newUsername = "@" + elProfileUser.value.trim().replace('@', '');
     const newEmail = elProfileEmail.value.trim();
-    const newPass = elProfilePass.value.trim();
     
     // Check uniqueness & 15 days
     const { data: profile } = await db.from('user_profiles').select('username, last_username_change').eq('id', currentUser.id).single();
@@ -343,11 +344,29 @@ async function saveProfile() {
     const updates = { username: newUsername, last_username_change: new Date().toISOString() };
     await db.from('user_profiles').update(updates).eq('id', currentUser.id);
     
-    if (newEmail !== currentUser.email) await db.auth.updateUser({ email: newEmail });
-    if (newPass) await db.auth.updateUser({ password: newPass });
+    if (newEmail !== currentUser.email) {
+        const { error } = await db.auth.updateUser({ email: newEmail });
+        if (error) alert("Erro ao atualizar e-mail: " + error.message);
+    }
 
     alert("Perfil atualizado com sucesso!");
     location.reload();
+}
+
+function unlockField(el) {
+    el.readOnly = false;
+    el.classList.remove('readonly-input');
+    el.classList.add('edit-active');
+    el.style.color = 'var(--on-surface)';
+    el.focus();
+}
+
+async function requestPasswordChange() {
+    if (confirm("Deseja receber um link de redefinição de senha por e-mail?")) {
+        const { error } = await db.auth.resetPasswordForEmail(currentUser.email);
+        if (error) alert("Erro: " + error.message);
+        else alert("Link enviado! Verifique sua caixa de entrada.");
+    }
 }
 
 async function uploadAvatar(file) {
@@ -807,6 +826,9 @@ if (elProfileTrigger) elProfileTrigger.onclick = () => {
 };
 if (elSaveProfile) elSaveProfile.onclick = saveProfile;
 if (elAvatarUpload) elAvatarUpload.onchange = (e) => { if (e.target.files[0]) uploadAvatar(e.target.files[0]); };
+if (elEditUserBtn) elEditUserBtn.onclick = () => unlockField(elProfileUser);
+if (elEditEmailBtn) elEditEmailBtn.onclick = () => unlockField(elProfileEmail);
+if (elChangePassBtn) elChangePassBtn.onclick = requestPasswordChange;
 
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', (e) => { 
