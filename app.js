@@ -631,12 +631,13 @@ function updateBalance(newBalance) {
     balance = newBalance;
     elBalance.textContent = formatJK(balance);
     if (elBalanceChip) {
-        if (balance >= 1) {
-            elBalanceChip.classList.add('positive');
-            elBalanceChip.classList.remove('empty');
-        } else {
+        elBalanceChip.classList.remove('positive', 'empty', 'fictitious');
+        if (balance == 0) {
             elBalanceChip.classList.add('empty');
-            elBalanceChip.classList.remove('positive');
+        } else if (currentUser) {
+            elBalanceChip.classList.add('positive');
+        } else {
+            elBalanceChip.classList.add('fictitious');
         }
     }
 }
@@ -1000,5 +1001,17 @@ document.addEventListener('click', (e) => {
     if (elLangDropdown && !elLangDropdown.contains(e.target)) elLangDropdown.classList.remove('active');
     if (elAudioMenu && !elAudioMenu.contains(e.target)) elAudioMenu.classList.remove('active');
 });
+
+const elBtnManual = document.getElementById('btn-manual-trigger');
+const elBtnWallet = document.getElementById('btn-wallet-trigger');
+const elManualOverlay = document.getElementById('manual-overlay');
+const elWalletOverlay = document.getElementById('wallet-overlay');
+const elBtnCloseManual = document.getElementById('btn-close-manual');
+const elBtnCloseWallet = document.getElementById('btn-close-wallet');
+
+if (elBtnManual) elBtnManual.onclick = () => { elAudioMenu.classList.remove('active'); elManualOverlay.classList.remove('hidden'); };
+if (elBtnWallet) elBtnWallet.onclick = () => { elAudioMenu.classList.remove('active'); elWalletOverlay.classList.remove('hidden'); };
+if (elBtnCloseManual) elBtnCloseManual.onclick = () => elManualOverlay.classList.add('hidden');
+if (elBtnCloseWallet) elBtnCloseWallet.onclick = () => elWalletOverlay.classList.add('hidden');
 
 init();
