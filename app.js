@@ -175,8 +175,9 @@ async function handleAuthTransition(session) {
         }
     } else {
         currentUser = null;
-        myUsername = localStorage.getItem('battlerps-user-handle') || 'Guest';
+        myUsername = localStorage.getItem('battlerps-user-handle') || 'Player 1';
         elP1Label.textContent = myUsername;
+        document.querySelector('.avatar-box .avatar-img').src = 'images/player_default.png';
         
         // Atualiza UI para Deslogado (Azul)
         elLoginTrigger.textContent = '👤 Login';
