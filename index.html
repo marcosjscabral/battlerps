@@ -13,35 +13,7 @@
 </head>
 
 <body>
-    <header>
-        <div class="logo">BATTLE SHAPE</div>
-        <div class="lang-dropdown" id="lang-dropdown">
-            <button class="lang-trigger" id="lang-current">🇺🇸</button>
-            <div class="lang-options">
-                <button class="lang-btn" data-lang="en">🇺🇸 English</button>
-                <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
-                <button class="lang-btn" data-lang="pt">🇵🇹 Português</button>
-            </div>
-        </div>
 
-        <div class="header-right">
-            <div class="balance-chip">
-                <span id="user-balance">0.00</span> <span>USDC</span>
-            </div>
-            <div class="volume-control">
-                <button id="music-toggle" class="music-btn" title="Music">🎵</button>
-                <div class="volume-slider-box">
-                    <input type="range" id="volume-music-slider" class="custom-slider" min="0" max="1" step="0.01" value="0.5">
-                </div>
-            </div>
-            <div class="volume-control">
-                <button id="sfx-toggle" class="music-btn" title="Effects">🔊</button>
-                <div class="volume-slider-box">
-                    <input type="range" id="volume-sfx-slider" class="custom-slider" min="0" max="1" step="0.01" value="0.5">
-                </div>
-            </div>
-        </div>
-    </header>
 
     <audio id="bg-music" loop preload="auto">
         <source src="audio/bg-music.mp3" type="audio/mpeg">
@@ -72,6 +44,38 @@
     </audio>
 
     <main>
+        <div class="top-bar">
+            <div class="lang-dropdown" id="lang-dropdown">
+                <button class="lang-trigger" id="lang-current">🇺🇸</button>
+                <div class="lang-options">
+                    <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+                    <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+                    <button class="lang-btn" data-lang="pt">🇵🇹 Português</button>
+                </div>
+            </div>
+
+            <div class="top-rights">
+                <div class="balance-chip">
+                    <span id="user-balance">0.00</span> <span>USDC</span>
+                </div>
+                <div class="volumes-box">
+                    <div class="volume-control">
+                        <button id="music-toggle" class="music-btn" title="Music">🎵</button>
+                        <div class="volume-slider-box">
+                            <input type="range" id="volume-music-slider" class="custom-slider" min="0" max="1" step="0.01" value="0.5">
+                        </div>
+                    </div>
+                    <div class="volume-control">
+                        <button id="sfx-toggle" class="music-btn" title="Effects">🔊</button>
+                        <div class="volume-slider-box">
+                            <input type="range" id="volume-sfx-slider" class="custom-slider" min="0" max="1" step="0.01" value="0.5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <h1 class="game-title" data-i18n="game-title">Battle!</h1>
         <p class="game-subtitle" data-i18n="game-subtitle">Make your move to start the shape match</p>
 
