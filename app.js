@@ -140,6 +140,31 @@ let currentTime = 5;
 let firstPlayedSide = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
+let currentUser = null;
+
+async function checkUser() {
+    const { data: { session } } = await db.auth.getSession();
+    await handleAuthTransition(session);
+}
+
+async function handleAuthTransition(session) {
+    if (session) {
+        currentUser = session.user;
+        const { data: profile } = await db.from('user_profiles').select('*').eq('id', currentUser.id).single();
+        if (profile) {
+            myUsername = profile.username || currentUser.email.split('@')[0];
+            updateBalance(profile.balance || 0);
+            elP1Label.textContent = myUsername;
+            if (profile.avatar_url) {
+                document.querySelector('.avatar-img').src = profile.avatar_url;
+            }
+        }
+    } else {
+        currentUser = null;
+        myUsername = localStorage.getItem('battlerps-user-handle') || 'Guest';
+        elP1Label.textContent = myUsername;
+    }
+}
 
 let storedVolMusic = localStorage.getItem('battlerps-volume-music');
 let currentVolumeMusic = storedVolMusic !== null ? parseFloat(storedVolMusic) : 0.4;
@@ -197,6 +222,37 @@ const elSfxClick = document.getElementById('sfx-click');
 const elMusicSlider = document.getElementById('volume-music-slider');
 const elSfxSlider = document.getElementById('volume-sfx-slider');
 const elSfxBtn = document.getElementById('sfx-toggle');
+const elAuthOverlay = document.getElementById('auth-overlay');
+const elLoginTrigger = document.getElementById('btn-login-trigger');
+const elAuthGoogle = document.getElementById('btn-auth-google');
+const elAuthEmailBtn = document.getElementById('btn-auth-email');
+const elEmailInput = document.getElementById('auth-email');
+const elPassInput = document.getElementById('auth-password');
+
+async function signInWithGoogle() {
+    await db.auth.signInWithOAuth({ provider: 'google' });
+}
+
+async function signInWithEmail() {
+    const email = elEmailInput.value.trim();
+    const password = elPassInput.value.trim();
+    if (!email || !password) return alert("Preencha email e senha");
+    
+    // Tenta login, se falhar tenta cadastro
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
+    if (error) {
+        const { error: signUpErr } = await db.auth.signUp({ email, password });
+        if (signUpErr) alert(signUpErr.message);
+        else alert("Conta criada! Verifique seu email ou tente logar.");
+    } else {
+        elAuthOverlay.classList.add('hidden');
+    }
+}
+
+async function signOut() {
+    await db.auth.signOut();
+    location.reload();
+}
 
 async function init() {
     applyLanguage(currentLang);
@@ -205,30 +261,38 @@ async function init() {
     elSfxSlider.value = currentVolumeSfx;
     applyVolumeMusic(currentVolumeMusic);
     applyVolumeSfx(currentVolumeSfx);
-
-    // Ensure we sync the button icon initially
     updateVolumeIconMusic(currentVolumeMusic);
     updateVolumeIconSfx(currentVolumeSfx);
 
-    // Trigger music reliably after first user interaction (browser policy workaround)
     document.body.addEventListener('pointerdown', () => {
         if (elMusic.paused && currentVolumeMusic > 0) {
             elMusic.play().catch(e => console.log('Music playback block', e));
         }
     }, { once: true });
 
-    // Profile check
-    const { data, error } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
-    if (data) {
-        updateBalance(data.balance);
-        if (data.username) {
-            myUsername = data.username;
-            elP1Label.textContent = myUsername;
+    // Initial Auth Check
+    await checkUser();
+
+    // Listen for Auth changes
+    db.auth.onAuthStateChange(async (event, session) => {
+        await handleAuthTransition(session);
+    });
+
+    // Fallback/Guest Profile Logic
+    if (!currentUser) {
+        const { data, error } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
+        if (data) {
+            updateBalance(data.balance);
+            if (data.username) {
+                myUsername = data.username;
+                elP1Label.textContent = myUsername;
+            }
+        } else {
+            const initial = 1000.00;
+            // Only upsert guest if no user is logged in
+            await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
+            updateBalance(initial);
         }
-    } else {
-        const initial = 1000.00;
-        await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
-        updateBalance(initial);
     }
 }
 
@@ -357,6 +421,12 @@ async function setMode(mode) {
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
     if (mode === 'pvp') {
+        if (!currentUser) {
+             // Redirecionar para login ou mostrar modal de auth (requisito 3 de entrega)
+             alert("Acesse sua conta para jogar PVP Online!");
+             document.getElementById('auth-overlay').classList.remove('hidden');
+             return;
+        }
         if (!myUsername) {
             elUsernameOverlay.classList.remove('hidden');
             return;
@@ -609,6 +679,12 @@ elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
 elSfxBtn.onclick = (e) => { e.stopPropagation(); toggleSfx(); };
 elMusicSlider.oninput = (e) => applyVolumeMusic(parseFloat(e.target.value));
 elSfxSlider.oninput = (e) => applyVolumeSfx(parseFloat(e.target.value));
+if (elLoginTrigger) elLoginTrigger.onclick = () => {
+    if (currentUser) { if(confirm("Sair da conta?")) signOut(); }
+    else elAuthOverlay.classList.remove('hidden');
+};
+if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
+if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', (e) => { 
     if (elLangDropdown && !elLangDropdown.contains(e.target)) elLangDropdown.classList.remove('active');
