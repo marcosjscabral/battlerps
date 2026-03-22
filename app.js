@@ -382,10 +382,17 @@ async function uploadAvatar(file) {
     const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
     const filePath = `avatars/${fileName}`;
 
-    const { error: uploadError } = await db.storage.from('avatars').upload(filePath, file);
-    if (uploadError) return alert(uploadError.message);
+    const { data, error: uploadError } = await db.storage.from('avatars').upload(fileName, file);
+    if (uploadError) {
+        if (uploadError.message === 'Bucket not found') {
+            alert("Atenção: O storage 'avatars' não foi encontrado no seu Supabase. \n\nPor favor, vá em Dashboard > Storage e crie um bucket chamado 'avatars' com acesso público.");
+        } else {
+            alert("Erro no upload: " + uploadError.message);
+        }
+        return;
+    }
 
-    const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(filePath);
+    const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(fileName);
     await db.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
     elProfilePreview.src = publicUrl;
 }
