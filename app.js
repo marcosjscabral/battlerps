@@ -172,6 +172,8 @@ const h1 = document.getElementById('p1-anim-hand');
 const h2 = document.getElementById('p2-anim-hand');
 const elLangTrigger = document.getElementById('lang-current');
 const elLangDropdown = document.getElementById('lang-dropdown');
+const elAudioMenu = document.getElementById('audio-menu');
+const elMenuBtn = document.getElementById('menu-btn');
 const elMusic = document.getElementById('bg-music');
 const elMusicBtn = document.getElementById('music-toggle');
 const elSfxBounce = document.getElementById('sfx-bounce');
@@ -601,12 +603,16 @@ function updateVolumeIconSfx(vol) {
 elSaveUsername.onclick = saveUsername;
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); applyLanguage(btn.dataset.lang); });
-elLangTrigger.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); elLangDropdown.classList.toggle('active'); };
+elLangTrigger.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); elLangDropdown.classList.toggle('active'); if(elAudioMenu) elAudioMenu.classList.remove('active'); };
+if(elMenuBtn) elMenuBtn.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); elAudioMenu.classList.toggle('active'); elLangDropdown.classList.remove('active'); };
 elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
 elSfxBtn.onclick = (e) => { e.stopPropagation(); toggleSfx(); };
 elMusicSlider.oninput = (e) => applyVolumeMusic(parseFloat(e.target.value));
 elSfxSlider.oninput = (e) => applyVolumeSfx(parseFloat(e.target.value));
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
-document.addEventListener('click', () => elLangDropdown.classList.remove('active'));
+document.addEventListener('click', (e) => { 
+    if (elLangDropdown && !elLangDropdown.contains(e.target)) elLangDropdown.classList.remove('active');
+    if (elAudioMenu && !elAudioMenu.contains(e.target)) elAudioMenu.classList.remove('active');
+});
 
 init();
