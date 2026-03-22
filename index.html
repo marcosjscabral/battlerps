@@ -168,29 +168,43 @@
                 <p id="auth-p-text" style="color: #666; font-size: 0.95rem; margin-bottom: 24px;">Acesse sua conta para entrar na Arena</p>
                 
                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <div class="input-group">
-                        <input type="email" id="auth-email" placeholder="exemplo@gmail.com">
+                    <button class="auth-tab active" data-tab="login">LOGIN</button>
+                    <button class="auth-tab" data-tab="signup">SIGNUP</button>
+                </div>
+
+                <div id="auth-form-container">
+                    <div class="input-stack">
+                        <input type="email" id="auth-email" placeholder="E-mail" style="padding: 14px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px;">
+                        <input type="password" id="auth-password" placeholder="Senha" style="padding: 14px; border-radius: 12px; border: 1px solid #eee;">
                     </div>
-                    <div class="input-group">
-                        <input type="password" id="auth-password" placeholder="••••••">
-                    </div>
-                    <button id="btn-auth-email" class="battle-btn">SIGN IN / UP</button>
                     
-                    <div style="margin: 5px 0; color: #999; font-size: 0.8rem; font-weight: 700;">OU</div>
+                    <button id="btn-auth-submit" class="battle-btn" style="margin-top: 20px;">ENTRAR NA ARENA</button>
+                    <p id="auth-error-msg" class="error-msg hidden" style="margin-top: 15px;"></p>
+
+                    <div style="margin: 20px 0; text-align: center; color: #999;">OU</div>
                     
                     <button id="btn-auth-google" class="google-btn">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G">
-                        <span>com o Google</span>
+                        <span>Entrar com Google</span>
                     </button>
                 </div>
-                
-                <button onclick="document.getElementById('auth-overlay').classList.add('hidden')" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; font-weight: 600;">Cancel</button>
+
+                <div class="shop-footer">
+                    <button class="secondary-btn" onclick="hideAllViews(); showView('game-screen')">Voltar ao Jogo</button>
+                </div>
             </div>
         </div>
 
-        <div id="profile-overlay" class="username-overlay hidden">
-            <div class="username-card">
-                <h2>MEU PERFIL</h2>
+        <!-- Tela de Perfil (Substitui central) -->
+        <div id="profile-view" class="hidden">
+            <div class="shop-container">
+                <div class="shop-header">
+                    <div class="shop-title-row">
+                        <h2>👤 Meu Perfil</h2>
+                        <button class="close-x-btn" onclick="hideAllViews(); showView('game-screen')">&times;</button>
+                    </div>
+                </div>
+
                 <div class="profile-pic-container">
                     <img id="profile-avatar-preview" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" class="avatar-img-large">
                     <label for="avatar-upload" class="avatar-edit-icon">✏️</label>
@@ -200,18 +214,25 @@
                 <div class="input-stack">
                     <div class="input-group">
                         <span class="handle-prefix">@</span>
-                        <input type="text" id="profile-username" placeholder="Player 1" maxlength="20" readonly class="readonly-input">
+                        <input type="text" id="profile-username" placeholder="Nickname" maxlength="20" readonly class="readonly-input">
                         <button class="edit-btn-inline" id="btn-edit-username">✏️</button>
                     </div>
                     <div class="input-group">
-                        <input type="email" id="profile-email" placeholder="E-mail de acesso" readonly class="readonly-input">
+                        <input type="email" id="profile-email" placeholder="E-mail" readonly class="readonly-input">
                         <button class="edit-btn-inline" id="btn-edit-email">✏️</button>
                     </div>
                 </div>
                 
                 <p id="profile-timer-msg" style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px; font-weight: 600;" class="hidden"></p>
-                <button id="btn-save-profile" class="battle-btn">SALVAR ALTERAÇÕES</button>
-                <button onclick="document.getElementById('profile-overlay').classList.add('hidden')" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; font-weight: 600;">Voltar</button>
+
+                <div class="btn-group" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                    <button id="btn-save-profile" class="battle-btn">SALVAR ALTERAÇÕES</button>
+                    <button id="btn-logout" class="secondary-btn" style="width: 100%; border-radius: 16px;">Sair do Jogo</button>
+                </div>
+
+                <div class="shop-footer">
+                    <button class="secondary-btn" onclick="hideAllViews(); showView('game-screen')">Voltar ao Jogo</button>
+                </div>
             </div>
         </div>
 

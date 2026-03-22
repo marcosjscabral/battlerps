@@ -307,16 +307,15 @@ const elSfxClick = document.getElementById('sfx-click');
 const elMusicSlider = document.getElementById('volume-music-slider');
 const elSfxSlider = document.getElementById('volume-sfx-slider');
 const elSfxBtn = document.getElementById('sfx-toggle');
-const elAuthOverlay = document.getElementById('auth-overlay');
+const elAuthView = document.getElementById('auth-view');
 const elLoginTrigger = document.getElementById('btn-login-trigger');
 const elAuthGoogle = document.getElementById('btn-auth-google');
-const elAuthEmailBtn = document.getElementById('btn-auth-email');
+const elAuthSubmit = document.getElementById('btn-auth-submit'); // Updated from elAuthEmailBtn
 const elEmailInput = document.getElementById('auth-email');
 const elPassInput = document.getElementById('auth-password');
-const elTabLogin = document.getElementById('tab-login');
-const elTabSignup = document.getElementById('tab-signup');
-const elAuthPText = document.getElementById('auth-p-text');
-const elProfileOverlay = document.getElementById('profile-overlay');
+const elTabLogin = document.querySelector('[data-tab="login"]');
+const elTabSignup = document.querySelector('[data-tab="signup"]');
+const elProfileView = document.getElementById('profile-view');
 const elProfileTrigger = document.getElementById('btn-profile-trigger');
 const elProfileUser = document.getElementById('profile-username');
 const elProfileEmail = document.getElementById('profile-email');
@@ -333,10 +332,48 @@ const elConfirmMsg = document.getElementById('confirm-msg');
 const elConfirmYes = document.getElementById('btn-confirm-yes');
 const elConfirmNo = document.getElementById('btn-confirm-no');
 const elToastSuccess = document.getElementById('toast-success');
+const elAuthPText = document.getElementById('auth-p-text');
+const elAuthOverlay = document.getElementById('auth-view'); // Assuming this is the main auth overlay
+const elAuthEmailBtn = document.getElementById('btn-auth-submit'); // Re-using the updated name
+const elLogoutBtn = document.getElementById('btn-logout');
+
 
 const elVsButton = document.getElementById('vs-button');
 const elCountdownOverlay = document.getElementById('countdown-overlay');
 const elCountdownText = document.getElementById('countdown-text');
+
+// --- Central Routing System ---
+const allViews = {
+    'game-screen': document.getElementById('game-screen'),
+    'manual-view': document.getElementById('manual-view'),
+    'wallet-view': document.getElementById('wallet-view'),
+    'admin-view': document.getElementById('admin-view'),
+    'auth-view': elAuthView,
+    'profile-view': elProfileView
+};
+
+window.showView = function(viewId) {
+    if (elAudioMenu) elAudioMenu.classList.remove('active'); // Close menu dropdown
+    
+    // Hide all main switches
+    Object.values(allViews).forEach(view => {
+        if (view) view.classList.add('hidden');
+    });
+
+    // Show target
+    const target = allViews[viewId];
+    if (target) {
+        target.classList.remove('hidden');
+        if (viewId === 'wallet-view') loadShop();
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+window.hideAllViews = () => {
+    Object.values(allViews).forEach(view => { if (view) view.classList.add('hidden'); });
+};
+
 
 let authMode = 'login'; // 'login' or 'signup'
 
@@ -371,7 +408,7 @@ async function signInWithEmail() {
             if (error.status === 400) alert("Email ou senha incorretos. Verifique seus dados.");
             else alert(error.message);
         } else {
-            elAuthOverlay.classList.add('hidden');
+            showView('game-screen'); // Changed from elAuthOverlay.classList.add('hidden');
         }
     }
     
@@ -395,10 +432,10 @@ function showConfirm(title, msg) {
     return new Promise((resolve) => {
         elConfirmTitle.textContent = title;
         elConfirmMsg.textContent = msg;
-        elConfirmOverlay.classList.remove('hidden');
+        showView('confirm-overlay'); // Changed from elConfirmOverlay.classList.remove('hidden');
         
-        elConfirmYes.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(true); };
-        elConfirmNo.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(false); };
+        elConfirmYes.onclick = () => { showView('game-screen'); resolve(true); }; // Changed
+        elConfirmNo.onclick = () => { showView('game-screen'); resolve(false); }; // Changed
     });
 }
 
@@ -441,7 +478,7 @@ async function saveProfile() {
     elProfileUser.readOnly = true; elProfileUser.classList.add('readonly-input'); elProfileUser.classList.remove('edit-active');
     elProfileEmail.readOnly = true; elProfileEmail.classList.add('readonly-input'); elProfileEmail.classList.remove('edit-active');
 
-    elProfileOverlay.classList.add('hidden');
+    showView('game-screen'); // Changed from elProfileOverlay.classList.add('hidden');
     elSaveProfile.disabled = false;
     
     // Animating success toast for 1.5s
@@ -1012,6 +1049,7 @@ document.addEventListener('click', (e) => {
     if (elAudioMenu && !elAudioMenu.contains(e.target)) elAudioMenu.classList.remove('active');
 });
 
+// --- Navigation & View Switcher ---
 const elBtnManual = document.getElementById('btn-manual-trigger');
 const elBtnWallet = document.getElementById('btn-wallet-trigger');
 const elBtnAdmin = document.getElementById('btn-admin-trigger');
@@ -1030,56 +1068,25 @@ const elBtnCloseAdminX = document.getElementById('btn-close-admin-x');
 const elBtnCloseAdminBottom = document.getElementById('btn-close-admin-bottom');
 const elBtnSaveNewCard = document.getElementById('btn-save-new-card');
 
-if (elBtnManual) {
-    elBtnManual.onclick = () => {
-        elAudioMenu.classList.remove('active');
-        if (elGameScreen) elGameScreen.classList.add('hidden');
-        if (elManualView) elManualView.classList.remove('hidden');
-    };
-}
-
-const hideManual = () => {
-    if (elManualView) elManualView.classList.add('hidden');
-    if (elGameScreen) elGameScreen.classList.remove('hidden');
+// Listeners for triggers
+if (elBtnManual) elBtnManual.onclick = () => showView('manual-view');
+if (elBtnWallet) elBtnWallet.onclick = () => showView('wallet-view');
+if (elBtnAdmin) elBtnAdmin.onclick = () => showView('admin-view');
+if (elProfileTrigger) elProfileTrigger.onclick = () => showView('profile-view');
+if (elLoginTrigger) elLoginTrigger.onclick = () => {
+    if (currentUser) showView('profile-view');
+    else showView('auth-view');
 };
 
-const hideShop = () => {
-    if (elWalletView) elWalletView.classList.add('hidden');
-    if (elGameScreen) elGameScreen.classList.remove('hidden');
-};
-
-const hideAdmin = () => {
-    if (elAdminView) elAdminView.classList.add('hidden');
-    if (elGameScreen) elGameScreen.classList.remove('hidden');
-};
-
-if (elBtnCloseManualX) elBtnCloseManualX.onclick = hideManual;
-if (elBtnCloseManualBottom) elBtnCloseManualBottom.onclick = hideManual;
-
-if (elBtnWallet) {
-    elBtnWallet.onclick = () => {
-        elAudioMenu.classList.remove('active');
-        if (elGameScreen) elGameScreen.classList.add('hidden');
-        if (elWalletView) elWalletView.classList.remove('hidden');
-        if (elShopBalance) elShopBalance.textContent = formatJK(balance);
-        loadShop();
-    };
-}
-
-if (elBtnAdmin) {
-    elBtnAdmin.onclick = () => {
-        elAudioMenu.classList.remove('active');
-        if (elGameScreen) elGameScreen.classList.add('hidden');
-        if (elAdminView) elAdminView.classList.remove('hidden');
-    };
-}
-
-if (elBtnCloseShopX) elBtnCloseShopX.onclick = hideShop;
-if (elBtnCloseShopBottom) elBtnCloseShopBottom.onclick = hideShop;
-if (elBtnCloseAdminX) elBtnCloseAdminX.onclick = hideAdmin;
-if (elBtnCloseAdminBottom) elBtnCloseAdminBottom.onclick = hideAdmin;
+if (elBtnCloseManualX) elBtnCloseManualX.onclick = () => showView('game-screen');
+if (elBtnCloseManualBottom) elBtnCloseManualBottom.onclick = () => showView('game-screen');
+if (elBtnCloseShopX) elBtnCloseShopX.onclick = () => showView('game-screen');
+if (elBtnCloseShopBottom) elBtnCloseShopBottom.onclick = () => showView('game-screen');
+if (elBtnCloseAdminX) elBtnCloseAdminX.onclick = () => showView('game-screen');
+if (elBtnCloseAdminBottom) elBtnCloseAdminBottom.onclick = () => showView('game-screen');
 
 if (elBtnSaveNewCard) elBtnSaveNewCard.onclick = saveNewCard;
+
 
 async function saveNewCard() {
     if (!currentUser || currentUser.email !== 'marcosjscabral@gmail.com') return;
