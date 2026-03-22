@@ -169,14 +169,16 @@ async function handleAuthTransition(session) {
                 balance: 1000.00,
                 avatar_url: defaultAvatar
             };
-            await db.from('user_profiles').upsert(novoPerfil, { onConflict: 'id' });
+            const { error: upsertError } = await db.from('user_profiles').upsert(novoPerfil);
+            if (upsertError) alert("Erro ao criar perfil: " + upsertError.message);
             activeProfile = novoPerfil;
         }
 
         myUsername = activeProfile.username;
         if (!myUsername) {
             myUsername = generateRandomUsername();
-            await db.from('user_profiles').update({ username: myUsername }).eq('id', currentUser.id);
+            const { error: updError } = await db.from('user_profiles').update({ username: myUsername }).eq('id', currentUser.id);
+            if (updError) alert("Erro ao atualizar nome: " + updError.message);
             activeProfile.username = myUsername;
         }
 
@@ -381,7 +383,13 @@ async function saveProfile() {
 
     // Updates
     const updates = { id: currentUser.id, username: newUsername, last_username_change: new Date().toISOString() };
-    await db.from('user_profiles').upsert(updates, { onConflict: 'id' });
+    const { error: saveError } = await db.from('user_profiles').upsert(updates);
+    
+    if (saveError) {
+        alert("Erro ao salvar perfil no banco de dados: " + saveError.message);
+        elSaveProfile.disabled = false;
+        return;
+    }
     
     // Update local UI immediately
     myUsername = newUsername;
