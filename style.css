@@ -55,6 +55,15 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 20px; di
 .arena-header { display: flex; justify-content: center; margin-bottom: 24px; }
 .phase-chip { background: var(--secondary); color: white; padding: 6px 14px; border-radius: 30px; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; }
 
+.score-board { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 30px; background: rgba(0,0,0,0.02); padding: 12px 20px; border-radius: 20px; border: 1px dashed rgba(0,0,0,0.05); }
+.score-item { display: flex; flex-direction: column; align-items: center; min-width: 80px; }
+.score-label { font-size: 0.65rem; font-weight: 800; color: var(--on-surface-variant); letter-spacing: 1px; margin-bottom: 2px; }
+.score-value { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.4rem; font-weight: 800; }
+.score-item.win .score-value { color: var(--win); text-shadow: 0 0 10px rgba(16, 185, 129, 0.1); }
+.score-item.draw .score-value { color: var(--draw); text-shadow: 0 0 10px rgba(107, 114, 128, 0.1); }
+.score-item.loss .score-value { color: var(--loss); text-shadow: 0 0 10px rgba(239, 68, 68, 0.1); }
+.score-divider { width: 1.5px; height: 30px; background: rgba(0,0,0,0.08); border-radius: 1px; }
+
 .players-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; position: relative; }
 .vs-symbol { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; color: #ddd; font-size: 1.2rem; }
 

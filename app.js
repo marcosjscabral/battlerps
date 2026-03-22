@@ -34,7 +34,10 @@ const translations = {
         'name-short': 'Nickname too short!',
         'name-taken': 'This BATTLE ID is taken!',
         'name-error': 'Error saving nickname',
-        'joining': 'JOINING ARENA...'
+        'joining': 'JOINING ARENA...',
+        'score-wins': 'WINS',
+        'score-draws': 'DRAWS',
+        'score-losses': 'LOSSES'
     },
     es: {
         'game-title': '¡Batalla!',
@@ -66,7 +69,10 @@ const translations = {
         'name-short': '¡Apodo muy corto!',
         'name-taken': '¡BATTLE ID ya usado!',
         'name-error': 'Error al guardar apodo',
-        'joining': 'ENTRANDO...'
+        'joining': 'ENTRANDO...',
+        'score-wins': 'VICTORIAS',
+        'score-draws': 'EMPATES',
+        'score-losses': 'DERROTAS'
     },
     pt: {
         'game-title': 'Batalha!',
@@ -98,7 +104,10 @@ const translations = {
         'name-short': 'Nickname muito curto!',
         'name-taken': 'Este BATTLE ID já existe!',
         'name-error': 'Erro ao salvar nickname',
-        'joining': 'ENTRANDO...'
+        'joining': 'ENTRANDO...',
+        'score-wins': 'VITÓRIAS',
+        'score-draws': 'EMPATES',
+        'score-losses': 'DERROTAS'
     }
 };
 
@@ -126,6 +135,9 @@ let currentTime = 5;
 let firstPlayedSide = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
+let scoreWins = parseInt(localStorage.getItem('battlerps-score-wins')) || 0;
+let scoreDraws = parseInt(localStorage.getItem('battlerps-score-draws')) || 0;
+let scoreLosses = parseInt(localStorage.getItem('battlerps-score-losses')) || 0;
 
 if (!currentWallet) {
     currentWallet = 'USER-' + Math.floor(Math.random() * 999999);
@@ -158,9 +170,17 @@ const elSaveUsername = document.getElementById('btn-save-username');
 const elUsernameError = document.getElementById('username-error');
 const elP1Label = document.getElementById('p1-label');
 const elP2Label = document.getElementById('p2-label');
+const elScoreWin = document.getElementById('score-win-count');
+const elScoreDraw = document.getElementById('score-draw-count');
+const elScoreLoss = document.getElementById('score-loss-count');
+const elSfxWin = document.getElementById('sfx-win');
+const elSfxLoss = document.getElementById('sfx-loss');
+const elSfxDraw = document.getElementById('sfx-draw');
+const elSfxClick = document.getElementById('sfx-click');
 
 async function init() {
     applyLanguage(currentLang);
+    updateScoreUI();
     const isMuted = localStorage.getItem('battlerps-muted') === 'true';
     if (isMuted) {
         elMusic.muted = true;
@@ -183,6 +203,7 @@ async function init() {
 }
 
 async function saveUsername() {
+    playSfx(elSfxClick);
     let raw = elUsernameInput.value.trim();
     const dic = translations[currentLang];
 
@@ -285,6 +306,12 @@ function updateBalance(newBalance) {
     elBalance.textContent = balance.toFixed(2);
 }
 
+function updateScoreUI() {
+    elScoreWin.textContent = scoreWins;
+    elScoreDraw.textContent = scoreDraws;
+    elScoreLoss.textContent = scoreLosses;
+}
+
 function triggerFloatingPayout(amount, type) {
     const float = document.createElement('div');
     float.className = 'floating-payout';
@@ -296,6 +323,7 @@ function triggerFloatingPayout(amount, type) {
 }
 
 async function setMode(mode) {
+    playSfx(elSfxClick);
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
     if (mode === 'pvp') {
@@ -358,6 +386,7 @@ function startPvPDiscovery() {
 function selectMove(move, btn) {
     if (phase !== 'COMMIT' || (gameMode === 'pvp' && !myUsername)) return;
     if (gameMode === 'pvp' && !partnerId) return;
+    playSfx(elSfxClick);
     myMove = move;
     const dic = translations[currentLang];
     document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
@@ -440,9 +469,25 @@ function showResult(result) {
     elResultBanner.classList.remove('hidden');
     elWinnerText.textContent = result.name;
     elWinnerText.className = '';
-    if (result.winner === 1) elWinnerText.classList.add('text-win');
-    else if (result.winner === 2) elWinnerText.classList.add('text-loss');
-    else elWinnerText.classList.add('text-draw');
+    if (result.winner === 1) {
+        elWinnerText.classList.add('text-win');
+        playSfx(elSfxWin);
+        scoreWins++;
+    }
+    else if (result.winner === 2) {
+        elWinnerText.classList.add('text-loss');
+        playSfx(elSfxLoss);
+        scoreLosses++;
+    }
+    else {
+        elWinnerText.classList.add('text-draw');
+        playSfx(elSfxDraw);
+        scoreDraws++;
+    }
+    updateScoreUI();
+    localStorage.setItem('battlerps-score-wins', scoreWins);
+    localStorage.setItem('battlerps-score-draws', scoreDraws);
+    localStorage.setItem('battlerps-score-losses', scoreLosses);
     setTimeout(resetMatch, 3000);
 }
 
@@ -466,6 +511,7 @@ function playSfx(el) {
 }
 
 function toggleMusic() {
+    playSfx(elSfxClick);
     const isMuted = !elMusic.muted;
     elMusic.muted = isMuted;
     localStorage.setItem('battlerps-muted', isMuted);
@@ -480,8 +526,8 @@ function toggleMusic() {
 // Events
 elSaveUsername.onclick = saveUsername;
 document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectMove(btn.dataset.move, btn));
-document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); applyLanguage(btn.dataset.lang); });
-elLangTrigger.onclick = (e) => { e.stopPropagation(); elLangDropdown.classList.toggle('active'); };
+document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); applyLanguage(btn.dataset.lang); });
+elLangTrigger.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); elLangDropdown.classList.toggle('active'); };
 elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', () => elLangDropdown.classList.remove('active'));

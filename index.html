@@ -44,6 +44,22 @@
         <source src="https://cdn.pixabay.com/audio/2022/03/10/audio_f7c8f2b380.mp3" type="audio/mpeg">
     </audio>
 
+    <audio id="sfx-win" preload="auto">
+        <source src="https://pixabay.com/static/audio/2021/08/04/audio_3ea348a5c3.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-loss" preload="auto">
+        <source src="https://pixabay.com/static/audio/2021/08/04/audio_5e29699f84.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-draw" preload="auto">
+        <source src="https://pixabay.com/static/audio/2022/03/15/audio_1081665a3c.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-click" preload="auto">
+        <source src="https://pixabay.com/static/audio/2022/03/13/audio_0867d7a414.mp3" type="audio/mpeg">
+    </audio>
+
     <main>
         <h1 class="game-title" data-i18n="game-title">Battle!</h1>
         <p class="game-subtitle" data-i18n="game-subtitle">Make your move to start the shape match</p>
@@ -82,6 +98,23 @@
 
             <div class="arena-header">
                 <div class="phase-chip" id="phase-chip" data-i18n="phase-committing">COMMITTING</div>
+            </div>
+
+            <div class="score-board">
+                <div class="score-item win">
+                    <span class="score-label" data-i18n="score-wins">WINS</span>
+                    <span id="score-win-count" class="score-value">0</span>
+                </div>
+                <div class="score-divider"></div>
+                <div class="score-item draw">
+                    <span class="score-label" data-i18n="score-draws">DRAWS</span>
+                    <span id="score-draw-count" class="score-value">0</span>
+                </div>
+                <div class="score-divider"></div>
+                <div class="score-item loss">
+                    <span class="score-label" data-i18n="score-losses">LOSSES</span>
+                    <span id="score-loss-count" class="score-value">0</span>
+                </div>
             </div>
 
             <div class="players-row">
