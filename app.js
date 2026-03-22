@@ -788,20 +788,25 @@ function processPayout(forcedLoss = false, forcedWin = false) {
         else result = determineWinner(myMove, botMove);
         elReconMsg.classList.add('hidden');
         let newBalance = balance;
-        if (result.winner === 1) { newBalance += (config.stake * result.mult - config.stake); triggerFloatingPayout(config.stake * result.mult, 'win'); }
-        else if (result.winner === 2) { newBalance -= config.stake; triggerFloatingPayout(-config.stake, 'loss'); }
+        if (result.winner === 1) { newBalance += 10; triggerFloatingPayout(10, 'win'); }
+        else if (result.winner === 2) { newBalance -= 10; triggerFloatingPayout(-10, 'loss'); }
+        else if (result.winner === 0) { newBalance -= 5; triggerFloatingPayout(-5, 'loss'); }
+        
         setTimeout(async () => {
             // Ledger: Sistema de rastreabilidade (Transações JK$)
             if (currentUser) {
                 if (result.winner === 1) {
-                    await db.from('transactions').insert({ user_id: currentUser.id, amount: (config.stake * result.mult - config.stake), type: 'game_win', description: 'Vitória no Joken' });
+                    await db.from('transactions').insert({ user_id: currentUser.id, amount: 10, type: 'game_win', description: 'Vitória no Joken' });
                 } else if (result.winner === 2) {
-                    await db.from('transactions').insert({ user_id: currentUser.id, amount: -config.stake, type: 'game_bet', description: 'Derrota no Joken' });
+                    await db.from('transactions').insert({ user_id: currentUser.id, amount: -10, type: 'game_bet', description: 'Derrota no Joken' });
+                } else if (result.winner === 0) {
+                    await db.from('transactions').insert({ user_id: currentUser.id, amount: -5, type: 'game_bet', description: 'Empate no Joken' });
                 }
             }
             updateBalance(newBalance);
             await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
-            await db.from('matches').insert([{ player_move: myMove, bot_move: botMove, outcome: result.name, stake: config.stake, payout: result.winner === 1 ? config.stake * result.mult : 0, user_id: currentWallet }]);
+            await db.from('user_profiles').update({ balance: newBalance }).eq('wallet_address', currentWallet);
+            await db.from('matches').insert([{ player_move: myMove, bot_move: botMove, outcome: result.name, stake: 10, payout: result.winner === 1 ? 10 : 0, user_id: currentWallet }]);
         }, 800);
         showResult(result);
     }, 1200);
