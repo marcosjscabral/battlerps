@@ -179,9 +179,6 @@ async function handleAuthTransition(session) {
                 elBtnAdmin.classList.add('hidden');
             }
         }
-        
-        if (elProfileTrigger) elProfileTrigger.classList.remove('hidden');
-        if (elChangePassBtn) elChangePassBtn.classList.remove('hidden');
 
         const { data: profile } = await db.from('user_profiles').select('*').eq('id', currentUser.id).single();
         
@@ -258,8 +255,6 @@ async function handleAuthTransition(session) {
         elLoginTrigger.title = 'Fazer Login';
 
         if (elBtnAdmin) elBtnAdmin.classList.add('hidden'); // Hide admin button if not logged in
-        if (elProfileTrigger) elProfileTrigger.classList.add('hidden');
-        if (elChangePassBtn) elChangePassBtn.classList.add('hidden');
     }
 }
 
@@ -356,7 +351,8 @@ const elConfirmYes = document.getElementById('btn-confirm-yes');
 const elConfirmNo = document.getElementById('btn-confirm-no');
 const elToastSuccess = document.getElementById('toast-success');
 const elAuthPText = document.getElementById('auth-p-text');
-const elAuthOverlay = document.getElementById('auth-view'); // Assuming this is the main auth overlay
+const elAuthOverlay = elAuthView; 
+const elProfileOverlay = elProfileView;
 const elAuthEmailBtn = document.getElementById('btn-auth-submit'); // Re-using the updated name
 const elLogoutBtn = document.getElementById('btn-logout');
 
@@ -596,6 +592,9 @@ async function init() {
             updateBalance(initial);
         }
     }
+    
+    // EXTREMELY CRITICAL: Show the arena by default!
+    showView('game-screen');
 }
 
 async function saveUsername() {
@@ -1051,7 +1050,7 @@ if (elLoginTrigger) elLoginTrigger.onclick = async () => {
         const ok = await showConfirm("LOGOUT", "Sair da conta?");
         if(ok) signOut(); 
     }
-    else elAuthOverlay.classList.remove('hidden');
+    else elAuthView.classList.remove('hidden');
 };
 if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
 if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
@@ -1060,9 +1059,9 @@ if (elTabSignup) elTabSignup.onclick = () => switchAuthMode('signup');
 if (elProfileTrigger) elProfileTrigger.onclick = () => {
     elAudioMenu.classList.remove('active');
     if (!currentUser) {
-        elAuthOverlay.classList.remove('hidden');
+        elAuthView.classList.remove('hidden');
     } else {
-        elProfileOverlay.classList.remove('hidden');
+        elProfileView.classList.remove('hidden');
     }
 };
 if (elSaveProfile) elSaveProfile.onclick = saveProfile;
