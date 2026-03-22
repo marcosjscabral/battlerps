@@ -17,16 +17,21 @@
         <div class="menu-dropdown" id="audio-menu">
             <button class="menu-trigger" id="menu-btn">☰</button>
             <div class="menu-options" id="menu-options">
-                <div class="volume-control">
-                    <button id="music-toggle" class="music-btn" title="Music">🎵</button>
-                    <div class="volume-slider-box">
-                        <input type="range" id="volume-music-slider" class="custom-slider" min="0" max="1" step="0.01" value="0.5">
+                <div class="menu-options">
+                    <button class="menu-item" id="btn-profile-trigger">👤 <span data-i18n="menu-profile">Profile</span></button>
+                    <div style="padding: 10px; border-top: 1px solid #eee;">
+                        <span class="score-label" data-i18n="music">MUSIC</span>
+                        <div class="slider-row">
+                            <input type="range" id="volume-music-slider" min="0" max="1" step="0.01" value="0.4">
+                            <button id="music-toggle" class="vol-btn">🎵</button>
+                        </div>
                     </div>
-                </div>
-                <div class="volume-control">
-                    <button id="sfx-toggle" class="music-btn" title="Effects">🔊</button>
-                    <div class="volume-slider-box">
-                        <input type="range" id="volume-sfx-slider" class="custom-slider" min="0" max="1" step="0.01" value="0.5">
+                    <div style="padding: 10px; border-top: 1px solid #eee;">
+                        <span class="score-label" data-i18n="sfx">SFX</span>
+                        <div class="slider-row">
+                            <input type="range" id="volume-sfx-slider" min="0" max="1" step="0.01" value="0.6">
+                            <button id="sfx-toggle" class="vol-btn">🔊</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -176,6 +181,34 @@
                 </div>
                 
                 <button onclick="document.getElementById('auth-overlay').classList.add('hidden')" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; font-weight: 600;">Cancel</button>
+            </div>
+        </div>
+
+        <div id="profile-overlay" class="username-overlay hidden">
+            <div class="username-card">
+                <h2>MEU PERFIL</h2>
+                <div class="profile-pic-container">
+                    <img id="profile-avatar-preview" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" class="avatar-img-large">
+                    <label for="avatar-upload" class="avatar-edit-icon">✏️</label>
+                    <input type="file" id="avatar-upload" accept="image/*" hidden>
+                </div>
+                
+                <div class="input-stack">
+                    <div class="input-group">
+                        <span class="handle-prefix">@</span>
+                        <input type="text" id="profile-username" placeholder="nickname" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="profile-email" placeholder="E-mail de acesso">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="profile-password" placeholder="Nova senha (opcional)">
+                    </div>
+                </div>
+                
+                <p id="profile-timer-msg" style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px; font-weight: 600;" class="hidden"></p>
+                <button id="btn-save-profile" class="battle-btn">SALVAR ALTERAÇÕES</button>
+                <button onclick="document.getElementById('profile-overlay').classList.add('hidden')" style="margin-top:20px; background:none; border:none; color:#999; cursor:pointer; font-weight: 600;">Voltar</button>
             </div>
         </div>
 

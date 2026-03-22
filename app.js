@@ -154,16 +154,24 @@ async function handleAuthTransition(session) {
         
         // Atualiza UI para Logado (Verde)
         elLoginTrigger.textContent = '👤';
-        elLoginTrigger.style.color = '#10b981'; // Verde (Success)
+        elLoginTrigger.style.color = '#10b981';
         elLoginTrigger.title = 'Sair da conta';
         
         if (profile) {
-            myUsername = profile.username || currentUser.email.split('@')[0];
+            myUsername = profile.username;
+            // Se o perfil não tem username, gera um aleatório e salva
+            if (!myUsername) {
+                myUsername = generateRandomUsername();
+                await db.from('user_profiles').update({ username: myUsername }).eq('id', currentUser.id);
+            }
             updateBalance(profile.balance || 0);
             elP1Label.textContent = myUsername;
             if (profile.avatar_url) {
                 document.querySelector('.avatar-img').src = profile.avatar_url;
+                elProfilePreview.src = profile.avatar_url;
             }
+            elProfileUser.value = myUsername.replace('@', '');
+            elProfileEmail.value = currentUser.email;
         }
     } else {
         currentUser = null;
@@ -172,9 +180,16 @@ async function handleAuthTransition(session) {
         
         // Atualiza UI para Deslogado (Azul)
         elLoginTrigger.textContent = '👤 Login';
-        elLoginTrigger.style.color = '#4285F4'; // Azul (Opcional, ou cor padrão do CSS)
+        elLoginTrigger.style.color = '#4285F4';
         elLoginTrigger.title = 'Fazer Login';
     }
+}
+
+function generateRandomUsername() {
+    const adj = ["Swift", "Brave", "Ancient", "Iron", "Silent", "Neon", "Cyber", "Dark"];
+    const noun = ["Shape", "Warrior", "Shadow", "King", "Knight", "Master", "Blade"];
+    const num = Math.floor(Math.random() * 9999);
+    return "@" + adj[Math.floor(Math.random()*adj.length)] + noun[Math.floor(Math.random()*noun.length)] + num;
 }
 
 let storedVolMusic = localStorage.getItem('battlerps-volume-music');
@@ -242,6 +257,15 @@ const elPassInput = document.getElementById('auth-password');
 const elTabLogin = document.getElementById('tab-login');
 const elTabSignup = document.getElementById('tab-signup');
 const elAuthPText = document.getElementById('auth-p-text');
+const elProfileOverlay = document.getElementById('profile-overlay');
+const elProfileTrigger = document.getElementById('btn-profile-trigger');
+const elProfileUser = document.getElementById('profile-username');
+const elProfileEmail = document.getElementById('profile-email');
+const elProfilePass = document.getElementById('profile-password');
+const elProfilePreview = document.getElementById('profile-avatar-preview');
+const elAvatarUpload = document.getElementById('avatar-upload');
+const elSaveProfile = document.getElementById('btn-save-profile');
+const elProfileTimer = document.getElementById('profile-timer-msg');
 
 let authMode = 'login'; // 'login' or 'signup'
 
@@ -286,6 +310,57 @@ async function signInWithEmail() {
 async function signOut() {
     await db.auth.signOut();
     location.reload();
+}
+
+async function saveProfile() {
+    if (!currentUser) return;
+    elSaveProfile.disabled = true;
+    const newUsername = "@" + elProfileUser.value.trim().replace('@', '');
+    const newEmail = elProfileEmail.value.trim();
+    const newPass = elProfilePass.value.trim();
+    
+    // Check uniqueness & 15 days
+    const { data: profile } = await db.from('user_profiles').select('username, last_username_change').eq('id', currentUser.id).single();
+    
+    if (newUsername !== profile.username) {
+        const lastChange = profile.last_username_change ? new Date(profile.last_username_change) : new Date(0);
+        const daysDiff = (new Date() - lastChange) / (1000 * 60 * 60 * 24);
+        
+        if (daysDiff < 15) {
+            elProfileTimer.textContent = `Aguarde ${Math.ceil(15 - daysDiff)} dias para trocar o nome novamente.`;
+            elProfileTimer.classList.remove('hidden');
+            elSaveProfile.disabled = false;
+            return;
+        }
+        
+        // Uniquess test
+        const { data: taken } = await db.from('user_profiles').select('id').eq('username', newUsername).single();
+        if (taken) { alert("Este nome já está em uso!"); elSaveProfile.disabled = false; return; }
+    }
+
+    // Updates
+    const updates = { username: newUsername, last_username_change: new Date().toISOString() };
+    await db.from('user_profiles').update(updates).eq('id', currentUser.id);
+    
+    if (newEmail !== currentUser.email) await db.auth.updateUser({ email: newEmail });
+    if (newPass) await db.auth.updateUser({ password: newPass });
+
+    alert("Perfil atualizado com sucesso!");
+    location.reload();
+}
+
+async function uploadAvatar(file) {
+    if (!currentUser) return;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${currentUser.id}-${Math.random()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    const { error: uploadError } = await db.storage.from('avatars').upload(filePath, file);
+    if (uploadError) return alert(uploadError.message);
+
+    const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(filePath);
+    await db.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+    elProfilePreview.src = publicUrl;
 }
 
 async function init() {
@@ -721,6 +796,14 @@ if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
 if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
 if (elTabLogin) elTabLogin.onclick = () => switchAuthMode('login');
 if (elTabSignup) elTabSignup.onclick = () => switchAuthMode('signup');
+if (elProfileTrigger) elProfileTrigger.onclick = () => {
+    if (!currentUser) return alert("Logue para editar seu perfil!");
+    elProfileOverlay.classList.remove('hidden');
+    elAudioMenu.classList.remove('active');
+};
+if (elSaveProfile) elSaveProfile.onclick = saveProfile;
+if (elAvatarUpload) elAvatarUpload.onchange = (e) => { if (e.target.files[0]) uploadAvatar(e.target.files[0]); };
+
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', (e) => { 
     if (elLangDropdown && !elLangDropdown.contains(e.target)) elLangDropdown.classList.remove('active');
