@@ -136,11 +136,15 @@ let firstPlayedSide = null;
 let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
 
-let storedVol = localStorage.getItem('battlerps-volume');
-let currentVolume = storedVol !== null ? parseFloat(storedVol) : 0.5;
-if (isNaN(currentVolume)) currentVolume = 0.5;
+let storedVolMusic = localStorage.getItem('battlerps-volume-music');
+let currentVolumeMusic = storedVolMusic !== null ? parseFloat(storedVolMusic) : 0.4;
+if (isNaN(currentVolumeMusic)) currentVolumeMusic = 0.4;
+let lastVolumeMusic = currentVolumeMusic > 0 ? currentVolumeMusic : 0.4;
 
-let lastVolume = currentVolume > 0 ? currentVolume : 0.5;
+let storedVolSfx = localStorage.getItem('battlerps-volume-sfx');
+let currentVolumeSfx = storedVolSfx !== null ? parseFloat(storedVolSfx) : 0.6;
+if (isNaN(currentVolumeSfx)) currentVolumeSfx = 0.6;
+let lastVolumeSfx = currentVolumeSfx > 0 ? currentVolumeSfx : 0.6;
 let scoreWins = parseInt(localStorage.getItem('battlerps-score-wins')) || 0;
 let scoreDraws = parseInt(localStorage.getItem('battlerps-score-draws')) || 0;
 let scoreLosses = parseInt(localStorage.getItem('battlerps-score-losses')) || 0;
@@ -183,16 +187,28 @@ const elSfxWin = document.getElementById('sfx-win');
 const elSfxLoss = document.getElementById('sfx-loss');
 const elSfxDraw = document.getElementById('sfx-draw');
 const elSfxClick = document.getElementById('sfx-click');
-const elVolumeSlider = document.getElementById('volume-slider');
+const elMusicSlider = document.getElementById('volume-music-slider');
+const elSfxSlider = document.getElementById('volume-sfx-slider');
+const elSfxBtn = document.getElementById('sfx-toggle');
 
 async function init() {
     applyLanguage(currentLang);
     updateScoreUI();
-    elVolumeSlider.value = currentVolume;
-    applyVolume(currentVolume);
+    elMusicSlider.value = currentVolumeMusic;
+    elSfxSlider.value = currentVolumeSfx;
+    applyVolumeMusic(currentVolumeMusic);
+    applyVolumeSfx(currentVolumeSfx);
 
     // Ensure we sync the button icon initially
-    updateVolumeIcon(currentVolume);
+    updateVolumeIconMusic(currentVolumeMusic);
+    updateVolumeIconSfx(currentVolumeSfx);
+
+    // Trigger music reliably after first user interaction (browser policy workaround)
+    document.body.addEventListener('pointerdown', () => {
+        if (elMusic.paused && currentVolumeMusic > 0) {
+            elMusic.play().catch(e => console.log('Music playback block', e));
+        }
+    }, { once: true });
 
     // Profile check
     const { data, error } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
@@ -518,37 +534,61 @@ function playSfx(el) {
 }
 
 function toggleMusic() {
-    if (elVolumeSlider.value > 0) {
-        lastVolume = elVolumeSlider.value;
-        elVolumeSlider.value = 0;
+    playSfx(elSfxClick);
+    if (elMusicSlider.value > 0) {
+        lastVolumeMusic = elMusicSlider.value;
+        elMusicSlider.value = 0;
     } else {
-        elVolumeSlider.value = lastVolume;
+        elMusicSlider.value = lastVolumeMusic;
     }
-    applyVolume(parseFloat(elVolumeSlider.value));
-    if (elVolumeSlider.value > 0) {
+    applyVolumeMusic(parseFloat(elMusicSlider.value));
+    if (elMusicSlider.value > 0) {
         elMusic.play().catch(e => console.log("Music error:", e));
     } else {
         elMusic.pause();
     }
 }
 
-function applyVolume(vol) {
-    currentVolume = vol;
-    const audios = document.querySelectorAll('audio');
-    audios.forEach(a => {
-        a.volume = vol;
-        if (vol > 0) a.muted = false;
-        else a.muted = true;
-    });
-    updateVolumeIcon(vol);
-    localStorage.setItem('battlerps-volume', vol);
-    localStorage.setItem('battlerps-muted', vol === 0);
+function toggleSfx() {
+    playSfx(elSfxClick);
+    if (elSfxSlider.value > 0) {
+        lastVolumeSfx = elSfxSlider.value;
+        elSfxSlider.value = 0;
+    } else {
+        elSfxSlider.value = lastVolumeSfx;
+    }
+    applyVolumeSfx(parseFloat(elSfxSlider.value));
 }
 
-function updateVolumeIcon(vol) {
+function applyVolumeMusic(vol) {
+    currentVolumeMusic = vol;
+    elMusic.volume = vol;
+    elMusic.muted = (vol <= 0);
+    updateVolumeIconMusic(vol);
+    localStorage.setItem('battlerps-volume-music', vol);
+}
+
+function applyVolumeSfx(vol) {
+    currentVolumeSfx = vol;
+    const audios = document.querySelectorAll('audio:not(#bg-music)');
+    audios.forEach(a => {
+        a.volume = vol;
+        a.muted = (vol <= 0);
+    });
+    updateVolumeIconSfx(vol);
+    localStorage.setItem('battlerps-volume-sfx', vol);
+}
+
+function updateVolumeIconMusic(vol) {
     if (vol == 0) elMusicBtn.textContent = '🔇';
     else if (vol < 0.5) elMusicBtn.textContent = '🔉';
-    else elMusicBtn.textContent = '🔊';
+    else elMusicBtn.textContent = '🎵';
+}
+
+function updateVolumeIconSfx(vol) {
+    if (vol == 0) elSfxBtn.textContent = '🔇';
+    else if (vol < 0.5) elSfxBtn.textContent = '🔉';
+    else elSfxBtn.textContent = '🔊';
 }
 
 // Events
@@ -557,7 +597,9 @@ document.querySelectorAll('.rps-btn').forEach(btn => btn.onclick = () => selectM
 document.querySelectorAll('.lang-btn').forEach(btn => btn.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); applyLanguage(btn.dataset.lang); });
 elLangTrigger.onclick = (e) => { e.stopPropagation(); playSfx(elSfxClick); elLangDropdown.classList.toggle('active'); };
 elMusicBtn.onclick = (e) => { e.stopPropagation(); toggleMusic(); };
-elVolumeSlider.oninput = (e) => applyVolume(parseFloat(e.target.value));
+elSfxBtn.onclick = (e) => { e.stopPropagation(); toggleSfx(); };
+elMusicSlider.oninput = (e) => applyVolumeMusic(parseFloat(e.target.value));
+elSfxSlider.oninput = (e) => applyVolumeSfx(parseFloat(e.target.value));
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', () => elLangDropdown.classList.remove('active'));
 
