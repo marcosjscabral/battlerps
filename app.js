@@ -381,6 +381,7 @@ async function saveProfile() {
     }
 
     alert("Perfil atualizado com sucesso!");
+    elProfileOverlay.classList.add('hidden');
     location.reload();
 }
 
