@@ -228,6 +228,19 @@ const elAuthGoogle = document.getElementById('btn-auth-google');
 const elAuthEmailBtn = document.getElementById('btn-auth-email');
 const elEmailInput = document.getElementById('auth-email');
 const elPassInput = document.getElementById('auth-password');
+const elTabLogin = document.getElementById('tab-login');
+const elTabSignup = document.getElementById('tab-signup');
+const elAuthPText = document.getElementById('auth-p-text');
+
+let authMode = 'login'; // 'login' or 'signup'
+
+function switchAuthMode(mode) {
+    authMode = mode;
+    elTabLogin.classList.toggle('active', mode === 'login');
+    elTabSignup.classList.toggle('active', mode === 'signup');
+    elAuthPText.textContent = mode === 'login' ? "Acesse sua conta para entrar na Arena" : "Crie sua conta para salvar suas vitórias";
+    elAuthEmailBtn.textContent = mode === 'login' ? "ENTRAR" : "CADASTRAR";
+}
 
 async function signInWithGoogle() {
     await db.auth.signInWithOAuth({ provider: 'google' });
@@ -685,6 +698,8 @@ if (elLoginTrigger) elLoginTrigger.onclick = () => {
 };
 if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
 if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
+if (elTabLogin) elTabLogin.onclick = () => switchAuthMode('login');
+if (elTabSignup) elTabSignup.onclick = () => switchAuthMode('signup');
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
 document.addEventListener('click', (e) => { 
     if (elLangDropdown && !elLangDropdown.contains(e.target)) elLangDropdown.classList.remove('active');
