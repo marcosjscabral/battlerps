@@ -431,11 +431,18 @@ async function init() {
     updateVolumeIconMusic(currentVolumeMusic);
     updateVolumeIconSfx(currentVolumeSfx);
 
-    document.body.addEventListener('pointerdown', () => {
+    const unlockAudio = () => {
         if (elMusic.paused && currentVolumeMusic > 0) {
-            elMusic.play().catch(e => console.log('Music playback block', e));
+            elMusic.play().catch(e => console.log('Music unlock retry', e));
         }
-    }, { once: true });
+        // Tenta dar play em todos os SFX (silenciados) para desbloquear context
+        const audios = document.querySelectorAll('audio');
+        audios.forEach(a => { if(a.paused && a.id !== 'bg-music') { a.play().then(()=>a.pause()).catch(()=>{}); } });
+    };
+
+    ['click', 'touchstart', 'pointerdown'].forEach(evt => {
+        document.body.addEventListener(evt, unlockAudio, { once: true });
+    });
 
     // Initial Auth Check
     await checkUser();
