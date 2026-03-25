@@ -363,7 +363,7 @@ const elAuthPText = document.getElementById('auth-p-text');
 const elAuthOverlay = elAuthView; 
 const elProfileOverlay = elProfileView;
 const elAuthEmailBtn = document.getElementById('btn-auth-submit'); // Re-using the updated name
-const elLogoutBtn = document.getElementById('btn-logout');
+
 
 
 const elVsButton = document.getElementById('vs-button');
@@ -1361,9 +1361,12 @@ if (elChangePassBtn) elChangePassBtn.onclick = () => {
     else requestPasswordChange();
 };
 
-if (elLogoutBtn) elLogoutBtn.onclick = signOut;
-
 // Close Buttons (X and Bottom)
+const elBtnCloseProfileX = document.getElementById('btn-close-profile-x');
+const elBtnCloseProfileBottom = document.getElementById('btn-close-profile-bottom');
+if (elBtnCloseProfileX) elBtnCloseProfileX.onclick = () => showView('game-screen');
+if (elBtnCloseProfileBottom) elBtnCloseProfileBottom.onclick = () => showView('game-screen');
+
 document.querySelectorAll('.close-x-btn, .secondary-btn').forEach(btn => {
     if (btn.id && btn.id.includes('close')) {
         btn.onclick = () => showView('game-screen');
