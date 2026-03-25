@@ -20,7 +20,6 @@
                 <button class="menu-item" id="btn-profile-trigger">👤 <span data-i18n="menu-profile">Profile</span></button>
                 <button class="menu-item" id="btn-change-password-trigger">🔑 <span data-i18n="menu-password">Trocar Senha</span></button>
                 <button class="menu-item" id="btn-wallet-trigger">💳 <span data-i18n="menu-wallet">Wallet Shop</span></button>
-                <button class="menu-item" id="btn-store-trigger">🛒 <span>Avatar Store</span></button>
                 <button class="menu-item" id="btn-manual-trigger">📖 <span data-i18n="menu-manual">Manual</span></button>
                 <button class="menu-item hidden" id="btn-admin-trigger">⚙️ <span data-i18n="menu-admin">Admin Center</span></button>
                 <div style="padding: 10px; border-top: 1px solid #eee;">
@@ -176,7 +175,8 @@
                 </div>
                 <div class="profile-pic-container">
                     <img id="profile-avatar-preview" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" class="avatar-img-large">
-                    <button class="avatar-edit-icon" id="btn-open-avatar-store" title="Trocar Avatar">✏️</button>
+                    <label for="avatar-upload" class="avatar-edit-icon">✏️</label>
+                    <input type="file" id="avatar-upload" accept="image/*" hidden>
                 </div>
                 <div class="input-stack">
                     <div class="input-group">
@@ -214,55 +214,14 @@
             </div>
         </div>
 
-        <!-- AVATAR STORE -->
-        <div id="store-view" class="hidden">
-            <div class="shop-container">
-                <div class="shop-header">
-                    <div class="shop-title-row">
-                        <h2>🛒 Avatar Store</h2>
-                        <button class="close-x-btn" id="btn-close-store-x">&times;</button>
-                    </div>
-                    <p class="store-subtitle">Escolha seu avatar para a arena</p>
-                </div>
-                <div class="avatar-store-grid" id="avatar-store-grid">
-                    <div class="store-loading">Carregando avatares...</div>
-                </div>
-                <div style="margin-top: 24px;">
-                    <button class="back-btn" id="btn-close-store-bottom">VOLTAR AO PERFIL</button>
-                </div>
-            </div>
-        </div>
-
         <div id="admin-view" class="hidden">
             <div class="shop-container">
                 <div class="shop-header"><div class="shop-title-row"><h2>⚙️ Admin</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div></div>
-                <!-- Abas Admin -->
-                <div class="admin-tabs">
-                    <button class="admin-tab active" id="admin-tab-wallet" onclick="switchAdminTab('wallet')">💳 Wallet Cards</button>
-                    <button class="admin-tab" id="admin-tab-avatars" onclick="switchAdminTab('avatars')">🛒 Avatares</button>
-                </div>
-
-                <!-- Aba: Wallet Cards -->
-                <div id="admin-panel-wallet" class="admin-panel">
-                    <div class="admin-form-card">
-                        <input type="file" id="admin-card-image" accept="image/*">
-                        <input type="number" id="admin-card-amount" placeholder="Quantidade JK">
-                        <input type="number" id="admin-card-price" placeholder="Preço Real">
-                        <button id="btn-save-new-card" class="battle-btn">CRIAR CARD</button>
-                    </div>
-                </div>
-
-                <!-- Aba: Avatares -->
-                <div id="admin-panel-avatars" class="admin-panel hidden">
-                    <div class="admin-form-card">
-                        <label class="admin-label">Nome do Avatar</label>
-                        <input type="text" id="admin-avatar-name" placeholder="Ex: Guerreiro Sombrio" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
-                        <label class="admin-label">Imagem do Avatar</label>
-                        <input type="file" id="admin-avatar-image" accept="image/*">
-                        <button id="btn-save-new-avatar" class="battle-btn" style="margin-top:10px;">➕ ADICIONAR AVATAR</button>
-                    </div>
-                    <div class="admin-label" style="margin-top:20px; margin-bottom:10px;">Avatares Cadastrados</div>
-                    <div id="admin-avatar-list" class="avatar-admin-list"></div>
+                <div class="admin-form-card">
+                    <input type="file" id="admin-card-image" accept="image/*">
+                    <input type="number" id="admin-card-amount" placeholder="Quantidade JK">
+                    <input type="number" id="admin-card-price" placeholder="Preço Real">
+                    <button id="btn-save-new-card" class="battle-btn">CRIAR CARD</button>
                 </div>
             </div>
         </div>
