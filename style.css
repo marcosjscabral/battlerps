@@ -119,8 +119,8 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 10px 20p
 
 .player-unit { flex: 1; display: flex; flex-direction: column; align-items: center; }
 .pvp-timer-wrap { height: 26px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
-.avatar-box { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; border: 3px solid #f8f9fa; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 12px; background: #eee; position: relative; }
-.avatar-img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-box { width: 90px; height: 90px; overflow: visible; margin-bottom: 8px; position: relative; display: flex; align-items: center; justify-content: center; }
+.avatar-img { width: 100%; height: 100%; object-fit: contain; }
 
 /* Satellite searching state */
 .avatar-box.searching {
