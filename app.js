@@ -1638,39 +1638,60 @@ async function selectAvatar(url, cardEl, avId) {
     }, 1500);
 }
 
+// --- Global State for Admin ---
+let editingAvatarId = null;
+
 async function saveNewAvatar() {
     if (!currentUser || currentUser.email !== 'marcosjscabral@gmail.com') return;
     const nameInput = document.getElementById('admin-avatar-name');
+    const priceInput = document.getElementById('admin-avatar-price');
     const fileInput = document.getElementById('admin-avatar-image');
     const btn = document.getElementById('btn-save-new-avatar');
+    
     const name = nameInput.value.trim();
+    const price = parseInt(priceInput.value) || 0;
     const file = fileInput.files[0];
 
-    if (!name || !file) { alert('Preencha o nome e selecione uma imagem!'); return; }
+    if (!name) { alert('Informe pelo menos o nome!'); return; }
+    if (!editingAvatarId && !file) { alert('Selecione uma imagem para o novo avatar!'); return; }
 
     btn.disabled = true;
-    btn.textContent = 'Enviando...';
+    btn.textContent = 'Processando...';
 
     try {
-        const ext = file.name.split('.').pop();
-        const fileName = `avatar_${Date.now()}.${ext}`;
-        const { error: uploadErr } = await db.storage.from('avatars').upload(fileName, file);
-        if (uploadErr) throw uploadErr;
+        let imageUrl = null;
+        if (file) {
+            const ext = file.name.split('.').pop();
+            const fileName = `avatar_${Date.now()}.${ext}`;
+            const { error: uploadErr } = await db.storage.from('avatars').upload(fileName, file);
+            if (uploadErr) throw uploadErr;
+            const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(fileName);
+            imageUrl = publicUrl;
+        }
 
-        const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(fileName);
-        const price = parseInt(document.getElementById('admin-avatar-price').value) || 0;
-        const { error: dbErr } = await db.from('store_avatars').insert({ name, image_url: publicUrl, price });
-        if (dbErr) throw dbErr;
+        if (editingAvatarId) {
+            // UPDATING existing
+            const updateData = { name, price };
+            if (imageUrl) updateData.image_url = imageUrl;
+            
+            const { error: dbErr } = await db.from('store_avatars').update(updateData).eq('id', editingAvatarId);
+            if (dbErr) throw dbErr;
+        } else {
+            // INSERTING new
+            const { error: dbErr } = await db.from('store_avatars').insert({ name, image_url: imageUrl, price });
+            if (dbErr) throw dbErr;
+        }
 
+        editingAvatarId = null;
         nameInput.value = '';
+        priceInput.value = '0';
         fileInput.value = '';
-        document.getElementById('admin-avatar-price').value = '0';
-        btn.textContent = '✅ Salvo!';
+        btn.textContent = '✅ Sucesso!';
         setTimeout(() => { btn.textContent = 'SALVAR'; btn.disabled = false; }, 1500);
         loadAdminAvatars();
     } catch (err) {
         alert('Erro: ' + err.message);
-        btn.textContent = '➕ ADICIONAR AVATAR';
+        btn.textContent = 'SALVAR';
         btn.disabled = false;
     }
 }
@@ -1696,16 +1717,40 @@ async function loadAdminAvatars() {
                 <strong>${av.name}</strong>
                 <span>JK$ ${av.price || 0} | ${av.is_active ? '✅ Ativo' : '🔴 Inativo'}</span>
             </div>
-            <button class="avatar-admin-del" onclick="deleteAvatar('${av.id}')">Remover</button>
+            <div class="admin-actions">
+                <button class="admin-action-btn admin-edit-btn" onclick="editAvatar('${av.id}')" title="Editar">✏️</button>
+                <button class="admin-action-btn admin-del-btn" onclick="deleteAvatar('${av.id}')" title="Excluir Permanente">❌</button>
+            </div>
         `;
         list.appendChild(item);
     });
 }
 
+function editAvatar(id) {
+    const items = document.querySelectorAll('.avatar-admin-item');
+    const avNameElement = Array.from(items).find(el => el.querySelector('button[onclick*="'+id+'"]'));
+    if (!avNameElement) return;
+
+    // Prefill form
+    editingAvatarId = id;
+    const nameStr = avNameElement.querySelector('strong').innerText;
+    const infoStr = avNameElement.querySelector('span').innerText;
+    const priceVal = infoStr.split('JK$ ')[1].split(' | ')[0];
+
+    document.getElementById('admin-avatar-name').value = nameStr;
+    document.getElementById('admin-avatar-price').value = priceVal;
+    
+    const btn = document.getElementById('btn-save-new-avatar');
+    btn.textContent = 'ATUALIZAR AVATAR';
+    
+    // Smooth scroll to top of admin panel
+    document.querySelector('.admin-panel').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 async function deleteAvatar(id) {
-    const ok = await showConfirm('REMOVER', 'Deseja desativar este avatar da store?');
+    const ok = await showConfirm('EXCLUIR DEFINITIVO', 'Deseja apagar este avatar permanentemente da base? (Não poderá ser desfeito)');
     if (!ok) return;
-    const { error } = await db.from('store_avatars').update({ is_active: false }).eq('id', id);
+    const { error } = await db.from('store_avatars').delete().eq('id', id);
     if (error) alert('Erro: ' + error.message);
     else loadAdminAvatars();
 }
