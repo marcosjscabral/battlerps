@@ -1217,13 +1217,33 @@ elVsButton.onclick = triggerMatchReset;
 
 function triggerMatchReset() {
     playSfx(elSfxClick);
+
+    if (gameMode === 'pvp') {
+        // Modo PvP: avisa oponente atual, zera placar e inicia nova busca
+        if (pvpChannel && partnerId) {
+            pvpChannel.send({ type: 'broadcast', event: 'disconnect', payload: { wallet: currentWallet } });
+        }
+
+        // Zera placar
+        scoreWins = 0; scoreDraws = 0; scoreLosses = 0;
+        elScoreWin.textContent = 0; elScoreDraw.textContent = 0; elScoreLoss.textContent = 0;
+        localStorage.setItem('battlerps-score-wins', 0);
+        localStorage.setItem('battlerps-score-draws', 0);
+        localStorage.setItem('battlerps-score-losses', 0);
+
+        // Reabilita controles e reinicia busca com antena
+        stopCountdown();
+        resetMatch();
+        startPvPDiscovery();
+        return;
+    }
+
+    // Modo BOT: contagem regressiva 3-2-1-GO normal
     elCountdownOverlay.style.display = 'flex';
     elCountdownOverlay.classList.remove('hidden');
     
     let count = 3;
     elCountdownText.textContent = count;
-    
-    // Bloquear os botões de jogada durante a contagem
     document.getElementById('move-controls').style.pointerEvents = 'none';
 
     const intv = setInterval(() => {
@@ -1232,7 +1252,6 @@ function triggerMatchReset() {
             elCountdownText.textContent = count;
         } else if (count === 0) {
             elCountdownText.textContent = "GO!";
-            // Reset do placar e do jogo aqui ("aí zera e o jogo pode ser iniciado")
             scoreWins = 0; scoreDraws = 0; scoreLosses = 0;
             elScoreWin.textContent = 0; elScoreDraw.textContent = 0; elScoreLoss.textContent = 0;
             localStorage.setItem('battlerps-score-wins', 0);
