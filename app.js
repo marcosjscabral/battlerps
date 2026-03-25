@@ -779,6 +779,13 @@ async function setMode(mode) {
             return;
         }
         */
+        // Zerar placar ao iniciar modo PvP
+        scoreWins = 0; scoreDraws = 0; scoreLosses = 0;
+        elScoreWin.textContent = 0; elScoreDraw.textContent = 0; elScoreLoss.textContent = 0;
+        localStorage.setItem('battlerps-score-wins', 0);
+        localStorage.setItem('battlerps-score-draws', 0);
+        localStorage.setItem('battlerps-score-losses', 0);
+
         elPvpStatus.classList.remove('hidden');
         startPvPDiscovery();
     } else {
