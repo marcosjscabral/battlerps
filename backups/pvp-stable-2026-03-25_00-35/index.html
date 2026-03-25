@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BATTLE SHAPE | Rock Paper Scissors</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css?v=2.8">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&family=Be+Vietnam+Pro:wght@400;500;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <div class="menu-dropdown" id="audio-menu">
+            <button class="menu-trigger" id="menu-btn">☰</button>
+            <div class="menu-options" id="menu-options">
+                <button class="menu-item" id="btn-profile-trigger">👤 <span data-i18n="menu-profile">Profile</span></button>
+                <button class="menu-item" id="btn-change-password-trigger">🔑 <span data-i18n="menu-password">Trocar Senha</span></button>
+                <button class="menu-item" id="btn-wallet-trigger">💳 <span data-i18n="menu-wallet">Wallet Shop</span></button>
+                <button class="menu-item" id="btn-manual-trigger">📖 <span data-i18n="menu-manual">Manual</span></button>
+                <button class="menu-item hidden" id="btn-admin-trigger">⚙️ <span data-i18n="menu-admin">Admin Center</span></button>
+                <div style="padding: 10px; border-top: 1px solid #eee;">
+                    <span class="score-label" data-i18n="music">MUSIC</span>
+                    <div class="slider-row">
+                        <input type="range" id="volume-music-slider" min="0" max="1" step="0.01" value="0.4">
+                        <button id="music-toggle" class="vol-btn">🎵</button>
+                    </div>
+                </div>
+                <div style="padding: 10px; border-top: 1px solid #eee;">
+                    <span class="score-label" data-i18n="sfx">SFX</span>
+                    <div class="slider-row">
+                        <input type="range" id="volume-sfx-slider" min="0" max="1" step="0.01" value="0.6">
+                        <button id="sfx-toggle" class="vol-btn">🔊</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-center">
+            <div id="auth-section">
+                <button id="btn-login-trigger" class="lang-trigger" title="Login">👤 Login</button>
+            </div>
+
+            <div class="balance-chip" id="balance-chip">
+                <span id="user-balance">0.00</span>
+            </div>
+
+            <div class="lang-dropdown" id="lang-dropdown">
+                <button class="lang-trigger" id="lang-current">🇧🇷</button>
+                <div class="lang-options">
+                    <button class="lang-btn" data-lang="en">🇺🇸 English</button>
+                    <button class="lang-btn" data-lang="es">🇪🇸 Español</button>
+                    <button class="lang-btn" data-lang="pt">🇧🇷 Português</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="logo">BATTLE<br>SHAPE</div>
+    </header>
+
+
+    <audio id="bg-music" loop preload="auto">
+        <source src="audio/bg-music.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-bounce" preload="auto">
+        <source src="audio/sfx-bounce.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-reveal" preload="auto">
+        <source src="audio/sfx-reveal.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-win" preload="auto">
+        <source src="audio/sfx-win.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-loss" preload="auto">
+        <source src="audio/sfx-loss.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-draw" preload="auto">
+        <source src="audio/sfx-draw.mp3" type="audio/mpeg">
+    </audio>
+
+    <audio id="sfx-click" preload="auto">
+        <source src="audio/sfx-click.mp3" type="audio/mpeg">
+    </audio>
+
+    <main>
+        <div id="game-screen">
+            <div class="mode-selector">
+                <button id="btn-mode-bot" class="mode-btn active" data-mode="bot">🆚 BOT</button>
+                <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span class="badge-new">NEW</span></button>
+            </div>
+            <div id="pvp-status" class="pvp-status-bar hidden">
+                <span class="searching-dot"></span>
+                <span id="pvp-status-text"></span>
+                <div class="pvp-wallets">
+                    <div class="pvp-wallet-chip" id="pvp-wallet-p1">JK$ --</div>
+                    <div class="pvp-wallet-chip pvp-wallet-chip--right" id="pvp-wallet-p2">JK$ --</div>
+                </div>
+            </div>
+            <div class="arena-card">
+                <div class="players-row">
+                    <div class="player-unit">
+                        <div class="pvp-timer-wrap"><span id="p1-timer" class="pvp-timer hidden">5s</span></div>
+                        <div class="avatar-box"><img id="p1-avatar" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" alt="P1" class="avatar-img"></div>
+                        <div id="p1-label" class="player-name">@YOU</div>
+                        <div id="p1-status" class="player-status" data-i18n="awaiting">Awaiting...</div>
+                    </div>
+                    <div id="vs-button" class="vs-symbol" style="cursor: pointer;" title="Resetar Placar">VS</div>
+                    <div class="player-unit">
+                        <div class="pvp-timer-wrap"><span id="p2-timer" class="pvp-timer hidden">5s</span></div>
+                        <div class="avatar-box"><img id="p2-avatar" src="images/warrior_bot.png" alt="P2" class="avatar-img"></div>
+                        <div id="p2-label" class="player-name">GRÃO-MESTRE</div>
+                        <div id="p2-status" class="player-status" data-i18n="thinking">Thinking...</div>
+                    </div>
+                </div>
+                <div class="score-board">
+                    <div class="score-item win"><span class="score-label" data-i18n="score-wins">WINS</span><span id="score-win-count" class="score-value">0</span></div>
+                    <div class="score-divider"></div>
+                    <div class="score-item draw"><span class="score-label" data-i18n="score-draws">DRAWS</span><span id="score-draw-count" class="score-value">0</span></div>
+                    <div class="score-divider"></div>
+                    <div class="score-item loss"><span class="score-label" data-i18n="score-losses">LOSSES</span><span id="score-loss-count" class="score-value">0</span></div>
+                </div>
+                <div class="arena-header">
+                    <div class="phase-chip" id="phase-chip" data-i18n="phase-committing">COMMITTING</div>
+                </div>
+                <div class="result-area">
+                    <div id="result-banner" class="result-banner hidden">
+                        <h1 id="winner-text">YOU WON!</h1>
+                    </div>
+                </div>
+                <div class="selection-grid" id="move-controls">
+                    <button class="move-card rps-btn" data-move="rock"><img class="move-emoji" src="images/rock.png" alt="✊"><span class="move-label" data-i18n="rock">ROCK</span></button>
+                    <button class="move-card rps-btn" data-move="paper"><img class="move-emoji" src="images/paper.png" alt="🖐️"><span class="move-label" data-i18n="paper">PAPER</span></button>
+                    <button class="move-card rps-btn" data-move="scissors"><img class="move-emoji" src="images/scissors.png" alt="✌️"><span class="move-label" data-i18n="scissors">SCISSORS</span></button>
+                </div>
+            </div>
+            <div id="recon-msg" class="recon-payout hidden" data-i18n="syncing">SYNCING PAYOUT...</div>
+        </div>
+
+        <div id="auth-view" class="username-overlay hidden">
+            <div class="username-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">LOGIN</button>
+                    <button class="auth-tab" data-tab="signup">SIGNUP</button>
+                </div>
+                <p id="auth-p-text" style="color: #666; font-size: 0.95rem; margin-bottom: 24px;">Acesse sua conta para entrar na Arena</p>
+                <div id="auth-form-container">
+                    <div class="input-stack">
+                        <input type="email" id="auth-email" placeholder="E-mail" style="padding: 14px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px;">
+                        <input type="password" id="auth-password" placeholder="Senha" style="padding: 14px; border-radius: 12px; border: 1px solid #eee;">
+                    </div>
+                    <button id="btn-auth-submit" class="battle-btn" style="margin-top: 20px;">ENTRAR NA ARENA</button>
+                    <p id="auth-error-msg" class="error-msg hidden" style="margin-top: 15px;"></p>
+                    <div style="margin: 20px 0; text-align: center; color: #999;">OU</div>
+                    <button id="btn-auth-google" class="google-btn"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span></button>
+                    <button id="btn-auth-close" class="secondary-btn" style="width: 100%; margin-top: 15px; border-radius: 12px; background: #f8f9fa; color: #666; font-weight: 500;">Voltar ao Jogo</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="profile-view" class="hidden">
+            <div class="shop-container">
+                <div class="shop-header">
+                    <div class="shop-title-row">
+                        <h2>👤 Meu Perfil</h2>
+                        <button class="close-x-btn" id="btn-close-profile-x">&times;</button>
+                    </div>
+                </div>
+                <div class="profile-pic-container">
+                    <img id="profile-avatar-preview" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" class="avatar-img-large">
+                    <label for="avatar-upload" class="avatar-edit-icon">✏️</label>
+                    <input type="file" id="avatar-upload" accept="image/*" hidden>
+                </div>
+                <div class="input-stack">
+                    <div class="input-group">
+                        <span class="handle-prefix">@</span><input type="text" id="profile-username" placeholder="Nickname" maxlength="20" readonly class="readonly-input"><button class="edit-btn-inline" id="btn-edit-username">✏️</button>
+                    </div>
+                    <div class="input-group">
+                        <input type="email" id="profile-email" placeholder="E-mail" readonly class="readonly-input"><button class="edit-btn-inline" id="btn-edit-email">✏️</button>
+                    </div>
+                </div>
+                <p id="profile-timer-msg" style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px; font-weight: 600;" class="hidden"></p>
+                <div class="btn-group" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                    <button id="btn-save-profile" class="battle-btn">SALVAR ALTERAÇÕES</button>
+                    <button id="btn-logout" class="secondary-btn" style="width: 100%; border-radius: 16px;">Sair do Jogo</button>
+                </div>
+                <div class="shop-footer">
+                    <button class="secondary-btn" id="btn-close-profile-bottom">Voltar ao Jogo</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="manual-view" class="hidden">
+            <div class="manual-container">
+                <div class="manual-header"><h2>📖 Manual</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div>
+                <div class="manual-content">
+                    <p><strong>Cores JK$:</strong> Verde (Real), Laranja (Fictício), Cinza (Zero).</p>
+                    <p>Vit: +10, Der: -10, Emp: -5.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="wallet-view" class="hidden">
+            <div class="shop-container">
+                <div class="shop-header">
+                    <div class="shop-title-row"><h2>💳 Wallet Shop</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div>
+                    <div class="shop-balance-banner" id="shop-balance-chip"><span class="banner-label">SALDO:</span><h3 id="shop-current-balance">JK$ --</h3></div>
+                </div>
+                <div class="shop-grid" id="shop-cards-grid"></div>
+            </div>
+        </div>
+
+        <div id="admin-view" class="hidden">
+            <div class="shop-container">
+                <div class="shop-header"><div class="shop-title-row"><h2>⚙️ Admin</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div></div>
+                <div class="admin-form-card">
+                    <input type="file" id="admin-card-image" accept="image/*">
+                    <input type="number" id="admin-card-amount" placeholder="Quantidade JK">
+                    <input type="number" id="admin-card-price" placeholder="Preço Real">
+                    <button id="btn-save-new-card" class="battle-btn">CRIAR CARD</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="username-overlay" class="username-overlay hidden">
+            <div class="username-card">
+                <h2>BATTLE ID</h2>
+                <div class="input-group"><span class="handle-prefix">@</span><input type="text" id="username-input" placeholder="nickname" maxlength="20"></div>
+                <button id="btn-save-username" class="battle-btn">JOIN</button>
+                <p id="username-error" class="error-msg hidden"></p>
+            </div>
+        </div>
+
+        <div id="confirm-overlay" class="username-overlay hidden">
+            <div class="username-card">
+                <h2 id="confirm-title">CONFIRMAÇÃO</h2>
+                <p id="confirm-msg">Deseja realizar esta ação?</p>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button id="btn-confirm-yes" class="battle-btn" style="flex: 1;">SIM</button>
+                    <button id="btn-confirm-no" class="secondary-battle-btn" style="flex: 1; border-radius: 16px; margin: 0;">NÃO</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="countdown-overlay" class="animation-overlay hidden"><h1 id="countdown-text">3</h1></div>
+        <div id="toast-success" class="toast-success hidden">Sucesso!</div>
+    </main>
+
+    <!-- Animation Overlay -->
+    <div id="animation-overlay" class="animation-overlay hidden">
+        <div class="arena-hands">
+            <div id="p1-anim-hand" class="hand"><img src="images/rock.png" class="anim-emoji-img"></div>
+            <div id="p2-anim-hand" class="hand"><img src="images/rock.png" class="anim-emoji-img"></div>
+        </div>
+    </div>
+    
+    <script src="app.js?v=2.8"></script>
+</body>
+
+</html>
