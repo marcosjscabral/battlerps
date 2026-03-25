@@ -347,6 +347,7 @@ const elMusicSlider = document.getElementById('volume-music-slider');
 const elSfxSlider = document.getElementById('volume-sfx-slider');
 const elSfxBtn = document.getElementById('sfx-toggle');
 const elAuthView = document.getElementById('auth-view');
+const elGameScreen = document.getElementById('game-screen');
 const elLoginTrigger = document.getElementById('btn-login-trigger');
 const elAuthGoogle = document.getElementById('btn-auth-google');
 const elAuthSubmit = document.getElementById('btn-auth-submit'); // Updated from elAuthEmailBtn
@@ -410,18 +411,14 @@ window.showView = function(viewId) {
     });
 
     // Special Case: overlays that should reset the game screen
-    if (viewId === 'game-screen') {
-        if (elGameScreen) elGameScreen.classList.remove('hidden');
-    } else {
-        const target = allViews[viewId];
-        if (target) {
-            target.classList.remove('hidden');
-            if (viewId === 'wallet-view') loadShop();
-            if (viewId === 'profile-view' && !currentUser) {
-                // If not logged in, redirect profile request to auth
-                showView('auth-view');
-                return;
-            }
+    const target = allViews[viewId];
+    if (target) {
+        target.classList.remove('hidden');
+        if (viewId === 'wallet-view') loadShop();
+        if (viewId === 'profile-view' && !currentUser) {
+            // If not logged in, redirect profile request to auth
+            showView('auth-view');
+            return;
         }
     }
     
@@ -1330,7 +1327,6 @@ document.addEventListener('click', (e) => {
 const elBtnManual = document.getElementById('btn-manual-trigger');
 const elBtnWallet = document.getElementById('btn-wallet-trigger');
 const elBtnAdmin = document.getElementById('btn-admin-trigger');
-const elGameScreen = document.getElementById('game-screen');
 const elManualView = document.getElementById('manual-view');
 const elWalletView = document.getElementById('wallet-view');
 const elAdminView = document.getElementById('admin-view');
