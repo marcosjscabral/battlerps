@@ -164,7 +164,6 @@ let currentWallet = localStorage.getItem('battlerps-device-id');
 let myUsername = localStorage.getItem('battlerps-user-handle');
 let currentUser = null;
 let pvpDiscoveryInterval = null;
-let myAvatarUrl = 'https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png';
 
 async function checkUser() {
     const { data: { session } } = await db.auth.getSession();
@@ -218,14 +217,13 @@ async function handleAuthTransition(session) {
         elP1Label.textContent = myUsername;
         
         if (activeProfile.avatar_url) {
-            myAvatarUrl = activeProfile.avatar_url;
-            elP1Avatar.src = myAvatarUrl;
-            elProfilePreview.src = myAvatarUrl;
+            document.querySelector('.avatar-img').src = activeProfile.avatar_url;
+            elProfilePreview.src = activeProfile.avatar_url;
         } else {
-            myAvatarUrl = 'images/player_default.png';
-            await db.from('user_profiles').update({ avatar_url: myAvatarUrl }).eq('id', currentUser.id);
-            elP1Avatar.src = myAvatarUrl;
-            elProfilePreview.src = myAvatarUrl;
+            const defaultAvatar = 'images/player_default.png';
+            await db.from('user_profiles').update({ avatar_url: defaultAvatar }).eq('id', currentUser.id);
+            document.querySelector('.avatar-img').src = defaultAvatar;
+            elProfilePreview.src = defaultAvatar;
         }
 
         // Popular modal de perfil com os dados reais
@@ -317,9 +315,7 @@ const elUsernameInput = document.getElementById('username-input');
 const elSaveUsername = document.getElementById('btn-save-username');
 const elUsernameError = document.getElementById('username-error');
 const elP1Label = document.getElementById('p1-label');
-const elP1Avatar = document.getElementById('p1-avatar');
 const elP2Label = document.getElementById('p2-label');
-const elP2Avatar = document.getElementById('p2-avatar');
 const elScoreWin = document.getElementById('score-win-count');
 const elScoreDraw = document.getElementById('score-draw-count');
 const elScoreLoss = document.getElementById('score-loss-count');
@@ -560,8 +556,6 @@ async function uploadAvatar(file) {
 
     const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(fileName);
     await db.from('user_profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
-    myAvatarUrl = publicUrl;
-    elP1Avatar.src = publicUrl;
     elProfilePreview.src = publicUrl;
 }
 
@@ -598,19 +592,16 @@ async function init() {
 
     // Fallback/Guest Profile Logic
     if (!currentUser) {
-        const { data, error } = await db.from('user_profiles').select('balance, username, avatar_url').eq('wallet_address', currentWallet).single();
+        const { data, error } = await db.from('user_profiles').select('balance, username').eq('wallet_address', currentWallet).single();
         if (data) {
             updateBalance(data.balance);
             if (data.username) {
                 myUsername = data.username;
                 elP1Label.textContent = myUsername;
             }
-            if (data.avatar_url) {
-                myAvatarUrl = data.avatar_url;
-                elP1Avatar.src = myAvatarUrl;
-            }
         } else {
             const initial = 1000.00;
+            // Only upsert guest if no user is logged in
             await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
             updateBalance(initial);
         }
@@ -785,7 +776,6 @@ async function setMode(mode) {
         if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
         elPvpStatus.classList.add('hidden');
         elP2Label.textContent = translations[currentLang]['p2-label'];
-        elP2Avatar.src = 'images/warrior_bot.png'; // Volta avatar do Bot
         if (pvpChannel) pvpChannel.unsubscribe();
         elUsernameOverlay.classList.add('hidden');
     }
@@ -810,14 +800,13 @@ function startPvPDiscovery() {
                 partnerId = payload.wallet;
                 partnerName = payload.username || dic['pvp-mode'];
                 elP2Label.textContent = partnerName;
-                if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
                 
                 // Responder com ACK para confirmar a conexão
                 pvpChannel.send({ 
                     type: 'broadcast', 
                     event: 'ack', 
-                    payload: { to: partnerId, from: currentWallet, username: myUsername, avatar: myAvatarUrl } 
+                    payload: { to: partnerId, from: currentWallet, username: myUsername } 
                 });
                 
                 if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
@@ -829,7 +818,6 @@ function startPvPDiscovery() {
                 partnerId = payload.from;
                 partnerName = payload.username || dic['pvp-mode'];
                 elP2Label.textContent = partnerName;
-                if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
                 
                 if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
@@ -864,7 +852,7 @@ function startPvPDiscovery() {
                        pvpChannel.send({ 
                            type: 'broadcast', 
                            event: 'discovery', 
-                           payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl } 
+                           payload: { wallet: currentWallet, username: myUsername } 
                        });
                    } else {
                        if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
