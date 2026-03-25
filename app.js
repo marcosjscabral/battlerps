@@ -490,10 +490,10 @@ function showConfirm(title, msg) {
     return new Promise((resolve) => {
         elConfirmTitle.textContent = title;
         elConfirmMsg.textContent = msg;
-        showView('confirm-overlay'); // Changed from elConfirmOverlay.classList.remove('hidden');
+        elConfirmOverlay.classList.remove('hidden');
         
-        elConfirmYes.onclick = () => { showView('game-screen'); resolve(true); }; // Changed
-        elConfirmNo.onclick = () => { showView('game-screen'); resolve(false); }; // Changed
+        elConfirmYes.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(true); };
+        elConfirmNo.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(false); };
     });
 }
 
@@ -1545,6 +1545,9 @@ async function selectAvatar(url, cardEl) {
     myAvatarUrl = url;
     if (elP1Avatar) elP1Avatar.src = url;
     if (elProfilePreview) elProfilePreview.src = url;
+
+    // Redireciona para o jogo
+    showView('game-screen');
 
     // Toast de sucesso
     elToastSuccess.textContent = '✅ Avatar atualizado!';
