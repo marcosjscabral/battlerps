@@ -147,7 +147,7 @@
 
         <div id="auth-view" class="username-overlay hidden">
             <div class="username-card">
-                <div class="auth-tabs">
+                <div id="auth-tabs-group" class="auth-tabs">
                     <button class="auth-tab active" data-tab="login">LOGIN</button>
                     <button class="auth-tab" data-tab="signup">SIGNUP</button>
                 </div>
@@ -162,6 +162,10 @@
                     <div style="margin: 20px 0; text-align: center; color: #999;">OU</div>
                     <button id="btn-auth-google" class="google-btn"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span></button>
                     <button id="btn-auth-close" class="secondary-btn" style="width: 100%; margin-top: 15px; border-radius: 12px; background: #f8f9fa; color: #666; font-weight: 500;">Voltar ao Jogo</button>
+                </div>
+                <div id="auth-logged-in-container" class="hidden" style="width: 100%; text-align: center;">
+                    <button id="btn-auth-logout" class="secondary-btn" style="width: 100%; border-radius: 12px; margin-top: 10px; background: #fff0f3; color: #b60d3d; border: 1px solid #ffd6de; font-weight: 700;">Sair da Conta</button>
+                    <button class="secondary-btn" onclick="showView('game-screen')" style="width: 100%; margin-top: 10px; border-radius: 12px; background: #f8f9fa; color: #666;">Voltar ao Jogo</button>
                 </div>
             </div>
         </div>
@@ -227,8 +231,9 @@
                 <div class="avatar-store-grid" id="avatar-store-grid">
                     <div class="store-loading">Carregando avatares...</div>
                 </div>
-                <div style="margin-top: 24px;">
+                <div class="btn-group" style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-top: 24px;">
                     <button class="back-btn" id="btn-close-store-bottom">VOLTAR AO PERFIL</button>
+                    <button class="back-btn" id="btn-close-store-game" style="background: #7d7d7d;">VOLTAR AO JOGO</button>
                 </div>
             </div>
         </div>

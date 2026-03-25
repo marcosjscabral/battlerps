@@ -234,6 +234,12 @@ async function handleAuthTransition(session) {
         elProfileUser.placeholder = myUsername.replace('@', '');
         elProfileEmail.value = currentUser.email; 
         
+        // --- Atualiza visualização do Auth Modal para estado logado ---
+        if (elAuthTabsGroup) elAuthTabsGroup.classList.add('hidden');
+        if (elAuthFormContainer) elAuthFormContainer.classList.add('hidden');
+        if (elAuthLoggedInContainer) elAuthLoggedInContainer.classList.remove('hidden');
+        if (elAuthPText) elAuthPText.textContent = `Logado como ${currentUser.email}`;
+
         // Ativar Realtime Listener para o Ledger/Wallet Híbrido da Economia JK$
         if (window.walletChannel) window.walletChannel.unsubscribe();
         window.walletChannel = db.channel('joken_economy_sync')
@@ -253,6 +259,12 @@ async function handleAuthTransition(session) {
         elP1Label.textContent = myUsername;
         document.querySelector('.avatar-box .avatar-img').src = 'images/player_default.png';
         
+        // --- Atualiza visualização do Auth Modal para estado deslogado ---
+        if (elAuthTabsGroup) elAuthTabsGroup.classList.remove('hidden');
+        if (elAuthFormContainer) elAuthFormContainer.classList.remove('hidden');
+        if (elAuthLoggedInContainer) elAuthLoggedInContainer.classList.add('hidden');
+        if (elAuthPText) elAuthPText.textContent = 'Acesse sua conta para entrar na Arena';
+
         // Atualiza UI para Deslogado (Azul)
         elLoginTrigger.textContent = '👤 Login';
         elLoginTrigger.style.color = '#4285F4';
@@ -360,6 +372,10 @@ const elConfirmYes = document.getElementById('btn-confirm-yes');
 const elConfirmNo = document.getElementById('btn-confirm-no');
 const elToastSuccess = document.getElementById('toast-success');
 const elAuthPText = document.getElementById('auth-p-text');
+const elAuthTabsGroup = document.getElementById('auth-tabs-group');
+const elAuthFormContainer = document.getElementById('auth-form-container');
+const elAuthLoggedInContainer = document.getElementById('auth-logged-in-container');
+const elAuthLogoutBtn = document.getElementById('btn-auth-logout');
 const elAuthOverlay = elAuthView; 
 const elProfileOverlay = elProfileView;
 const elAuthEmailBtn = document.getElementById('btn-auth-submit'); // Re-using the updated name
@@ -1335,28 +1351,9 @@ if (elProfileTrigger) elProfileTrigger.onclick = () => {
     else showView('auth-view');
 };
 // btn-login-trigger: SEMPRE abre a tela de auth (login ou conta)
-if (elLoginTrigger) elLoginTrigger.onclick = () => {
-    if (currentUser) {
-        // Quando logado: adapta o auth modal para mostrar opção de sair
-        elAuthPText.textContent = `Logado como ${currentUser.email}`;
-        elAuthView.querySelector('#auth-form-container').style.display = 'none';
-        document.getElementById('btn-auth-logout-inline')?.remove();
-        const logoutBtn = document.createElement('button');
-        logoutBtn.id = 'btn-auth-logout-inline';
-        logoutBtn.className = 'secondary-btn';
-        logoutBtn.style.cssText = 'width:100%; border-radius:12px; margin-top:20px;';
-        logoutBtn.textContent = 'Sair da Conta';
-        logoutBtn.onclick = () => { showView('game-screen'); signOut(); };
-        elAuthView.querySelector('.username-card').appendChild(logoutBtn);
-        showView('auth-view');
-    } else {
-        // Quando deslogado: mostra form normal
-        elAuthView.querySelector('#auth-form-container').style.display = '';
-        if (elAuthPText) elAuthPText.textContent = 'Acesse sua conta para entrar na Arena';
-        document.getElementById('btn-auth-logout-inline')?.remove();
-        showView('auth-view');
-    }
-};
+if (elLoginTrigger) elLoginTrigger.onclick = () => showView('auth-view');
+if (elAuthLogoutBtn) elAuthLogoutBtn.onclick = () => { showView('game-screen'); signOut(); };
+
 if (elChangePassBtn) elChangePassBtn.onclick = () => {
     if (!currentUser) showView('auth-view');
     else requestPasswordChange();
@@ -1381,12 +1378,14 @@ const elBtnStoreTrigger = document.getElementById('btn-store-trigger');
 const elBtnOpenAvatarStore = document.getElementById('btn-open-avatar-store');
 const elBtnCloseStoreX = document.getElementById('btn-close-store-x');
 const elBtnCloseStoreBottom = document.getElementById('btn-close-store-bottom');
+const elBtnCloseStoreGame = document.getElementById('btn-close-store-game');
 const elBtnSaveNewAvatar = document.getElementById('btn-save-new-avatar');
 
 if (elBtnStoreTrigger) elBtnStoreTrigger.onclick = () => { elAudioMenu.classList.remove('active'); showView('store-view'); loadAvatarStore(); };
 if (elBtnOpenAvatarStore) elBtnOpenAvatarStore.onclick = () => { showView('store-view'); loadAvatarStore(); };
 if (elBtnCloseStoreX) elBtnCloseStoreX.onclick = () => showView('profile-view');
 if (elBtnCloseStoreBottom) elBtnCloseStoreBottom.onclick = () => showView('profile-view');
+if (elBtnCloseStoreGame) elBtnCloseStoreGame.onclick = () => showView('game-screen');
 if (elBtnSaveNewAvatar) elBtnSaveNewAvatar.onclick = saveNewAvatar;
 
 // Admin tabs
