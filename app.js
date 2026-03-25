@@ -1493,34 +1493,118 @@ async function buyCard(cardId) {
 }
 
 // ===== AVATAR STORE FUNCTIONS =====
+let myUnlockedAvatars = [];
+let currentStoreTab = 'buy'; // 'buy' or 'owned'
+
+async function switchStoreTab(tab) {
+    currentStoreTab = tab;
+    document.getElementById('store-tab-buy').classList.toggle('active', tab === 'buy');
+    document.getElementById('store-tab-owned').classList.toggle('active', tab === 'owned');
+    loadAvatarStore();
+}
+
 async function loadAvatarStore() {
     const grid = document.getElementById('avatar-store-grid');
     if (!grid) return;
+    if (!currentUser) { grid.innerHTML = '<div class="store-loading">Faça login para ver a loja.</div>'; return; }
+    
     grid.innerHTML = '<div class="store-loading">Carregando avatares...</div>';
 
-    const { data: avatars, error } = await db.from('store_avatars').select('*').eq('is_active', true).order('created_at');
+    // Busca perfil para ver skins desbloqueadas
+    const { data: profile } = await db.from('user_profiles').select('unlocked_skins').eq('id', currentUser.id).single();
+    myUnlockedAvatars = profile?.unlocked_skins || [];
+
+    const { data: avatars, error } = await db.from('store_avatars').select('*').eq('is_active', true).order('price', { ascending: true });
     if (error || !avatars || avatars.length === 0) {
         grid.innerHTML = '<div class="store-loading">Nenhum avatar disponível ainda.</div>';
         return;
     }
 
     grid.innerHTML = '';
-    avatars.forEach(av => {
+    
+    // Filtro por skins adquiridas se estiver na aba owned
+    const filteredAvatars = currentStoreTab === 'owned' 
+        ? avatars.filter(av => av.price === 0 || myUnlockedAvatars.includes(av.id))
+        : avatars;
+
+    if (filteredAvatars.length === 0) {
+        grid.innerHTML = `<div class="store-loading">Você ainda não possui outras skins no momento.</div>`;
+        return;
+    }
+
+    filteredAvatars.forEach(av => {
         const isSelected = myAvatarUrl === av.image_url;
+        const isUnlocked = av.price === 0 || myUnlockedAvatars.includes(av.id);
+        
         const card = document.createElement('div');
         card.className = 'avatar-store-card' + (isSelected ? ' selected' : '');
-        card.dataset.url = av.image_url;
+        card.dataset.id = av.id;
+        card.dataset.price = av.price;
+        
+        let priceTag = '';
+        if (isUnlocked) {
+            priceTag = av.price === 0 ? '<span class="avatar-price-tag free">GRÁTIS</span>' : '<span class="avatar-price-tag unlocked">ADQUIRIDO</span>';
+        } else {
+            priceTag = `<span class="avatar-price-tag paid">JK$ ${av.price}</span>`;
+        }
+
         card.innerHTML = `
             <span class="avatar-selected-badge">✓ USO</span>
             <img src="${av.image_url}" alt="${av.name}">
             <span class="avatar-store-name">${av.name}</span>
+            ${priceTag}
+            ${!isUnlocked ? `<button class="avatar-buy-btn" data-id="${av.id}">ADQUIRIR</button>` : ''}
         `;
-        card.onclick = () => selectAvatar(av.image_url, card);
+
+        card.onclick = (e) => {
+            if (e.target.classList.contains('avatar-buy-btn')) return; // handled by button
+            if (isUnlocked) selectAvatar(av.image_url, card, av.id);
+            else alert('Você precisa adquirir este avatar primeiro!');
+        };
+
+        const buyBtn = card.querySelector('.avatar-buy-btn');
+        if (buyBtn) {
+            buyBtn.onclick = (e) => {
+                e.stopPropagation();
+                purchaseAvatar(av);
+            };
+        }
+
         grid.appendChild(card);
     });
 }
 
-async function selectAvatar(url, cardEl) {
+async function purchaseAvatar(av) {
+    if (!currentUser) return;
+    if (balance < av.price) { alert(`Saldo insuficiente! Você precisa de JK$ ${av.price}.`); return; }
+
+    const ok = await showConfirm('ADQUIRIR AVATAR', `Deseja comprar "${av.name}" por JK$ ${av.price}?`);
+    if (!ok) return;
+
+    // Process Purchase
+    const newBalance = balance - av.price;
+    const newUnlocked = [...myUnlockedAvatars, av.id];
+
+    const { error: updErr } = await db.from('user_profiles').update({
+        balance: newBalance,
+        unlocked_skins: newUnlocked
+    }).eq('id', currentUser.id);
+
+    if (updErr) { alert('Erro na compra: ' + updErr.message); return; }
+
+    // Update Local State
+    balance = newBalance;
+    myUnlockedAvatars = newUnlocked;
+    if (elBalance) elBalance.textContent = formatJK(balance);
+    if (elBalanceChip) elBalanceChip.textContent = formatJK(balance);
+    if (elShopBalance) elShopBalance.textContent = formatJK(balance);
+
+    playSfx(elSfxWin); // reuse win sfx for happy purchase
+    loadAvatarStore(); 
+    alert(`Parabéns! "${av.name}" agora é seu.`);
+}
+
+async function selectAvatar(url, cardEl, avId) {
     if (!currentUser) { alert('Faça login para trocar seu avatar!'); return; }
     
     // Confirmação antes de mudar
@@ -1574,11 +1658,13 @@ async function saveNewAvatar() {
         if (uploadErr) throw uploadErr;
 
         const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(fileName);
-        const { error: dbErr } = await db.from('store_avatars').insert({ name, image_url: publicUrl });
+        const price = parseInt(document.getElementById('admin-avatar-price').value) || 0;
+        const { error: dbErr } = await db.from('store_avatars').insert({ name, image_url: publicUrl, price });
         if (dbErr) throw dbErr;
 
         nameInput.value = '';
         fileInput.value = '';
+        document.getElementById('admin-avatar-price').value = '0';
         btn.textContent = '✅ Salvo!';
         setTimeout(() => { btn.textContent = 'SALVAR'; btn.disabled = false; }, 1500);
         loadAdminAvatars();
@@ -1608,7 +1694,7 @@ async function loadAdminAvatars() {
             <img src="${av.image_url}" alt="${av.name}">
             <div class="avatar-admin-info">
                 <strong>${av.name}</strong>
-                <span>${av.is_active ? '✅ Ativo' : '🔴 Inativo'}</span>
+                <span>JK$ ${av.price || 0} | ${av.is_active ? '✅ Ativo' : '🔴 Inativo'}</span>
             </div>
             <button class="avatar-admin-del" onclick="deleteAvatar('${av.id}')">Remover</button>
         `;

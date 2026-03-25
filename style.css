@@ -331,6 +331,32 @@ main { flex: 1; max-width: 500px; margin: 0 auto; width: 100%; padding: 10px 20p
     display: none;
 }
 .avatar-store-card.selected .avatar-selected-badge { display: block; }
+.avatar-price-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin-top: 4px;
+}
+.avatar-price-tag.free { background: #e6fcf5; color: #0ca678; }
+.avatar-price-tag.unlocked { background: #f1f3f5; color: #495057; }
+.avatar-price-tag.paid { background: #fff9db; color: #f08c00; border: 1px solid #ffe066; }
+
+.avatar-buy-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    border: none;
+    background: var(--primary);
+    color: white;
+    font-weight: 800;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.avatar-buy-btn:hover { transform: scale(1.05); }
+
 .store-loading { grid-column: 1/-1; text-align: center; padding: 40px; color: #aaa; font-size: 0.9rem; }
 
 /* ===== ADMIN TABS ===== */

@@ -227,6 +227,11 @@
                         <button class="close-x-btn" id="btn-close-store-x">&times;</button>
                     </div>
                     <p class="store-subtitle">Escolha seu avatar para a arena</p>
+                    
+                    <div class="admin-tabs" style="margin-top: 20px;">
+                        <button class="admin-tab active" id="store-tab-buy" onclick="switchStoreTab('buy')">🛍️ LOJA</button>
+                        <button class="admin-tab" id="store-tab-owned" onclick="switchStoreTab('owned')">🛡️ SKINS</button>
+                    </div>
                 </div>
                 <div class="avatar-store-grid" id="avatar-store-grid">
                     <div class="store-loading">Carregando avatares...</div>
@@ -264,6 +269,8 @@
                         <input type="text" id="admin-avatar-name" placeholder="Ex: Guerreiro Sombrio" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
                         <label class="admin-label">Imagem do Avatar</label>
                         <input type="file" id="admin-avatar-image" accept="image/*">
+                        <label class="admin-label">Preço (JK$)</label>
+                        <input type="number" id="admin-avatar-price" placeholder="Preço (0 para grátis)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;" value="0">
                         <button id="btn-save-new-avatar" class="battle-btn" style="margin-top:10px;">SALVAR</button>
                     </div>
                     <div class="admin-label" style="margin-top:20px; margin-bottom:10px;">Avatares Cadastrados</div>
