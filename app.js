@@ -444,7 +444,12 @@ function switchAuthMode(mode) {
 }
 
 async function signInWithGoogle() {
-    await db.auth.signInWithOAuth({ provider: 'google' });
+    await db.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+            redirectTo: window.location.origin
+        }
+    });
 }
 
 async function signInWithEmail() {
@@ -456,17 +461,25 @@ async function signInWithEmail() {
     
     if (authMode === 'signup') {
         // Fluxo de Cadastro
-        const { data, error } = await db.auth.signUp({ email, password });
+        const { data, error } = await db.auth.signUp({ 
+            email, 
+            password,
+            options: { emailRedirectTo: window.location.origin }
+        });
         if (error) alert(error.message);
         else alert("Conta criada! Verifique seu e-mail para confirmar a conta.");
     } else {
         // Fluxo de Login
-        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        const { data, error } = await db.auth.signInWithPassword({ 
+            email, 
+            password,
+            options: { emailRedirectTo: window.location.origin }
+        });
         if (error) {
             if (error.status === 400) alert("Email ou senha incorretos. Verifique seus dados.");
             else alert(error.message);
         } else {
-            showView('game-screen'); // Changed from elAuthOverlay.classList.add('hidden');
+            showView('game-screen'); 
         }
     }
     
@@ -1305,27 +1318,27 @@ if (elLoginTrigger) elLoginTrigger.onclick = async () => {
         const ok = await showConfirm("LOGOUT", "Sair da conta?");
         if(ok) signOut(); 
     }
-    else elAuthView.classList.remove('hidden');
+    else showView('auth-view');
 };
 if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
 if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
 if (elTabLogin) elTabLogin.onclick = () => switchAuthMode('login');
 if (elTabSignup) elTabSignup.onclick = () => switchAuthMode('signup');
+
 if (elProfileTrigger) elProfileTrigger.onclick = () => {
-    elAudioMenu.classList.remove('active');
-    if (!currentUser) {
-        elAuthView.classList.remove('hidden');
-    } else {
-        elProfileView.classList.remove('hidden');
-    }
+    if (elAudioMenu) elAudioMenu.classList.remove('active');
+    if (currentUser) showView('profile-view');
+    else showView('auth-view');
 };
+
 if (elSaveProfile) elSaveProfile.onclick = saveProfile;
 if (elAvatarUpload) elAvatarUpload.onchange = (e) => { if (e.target.files[0]) uploadAvatar(e.target.files[0]); };
 if (elEditUserBtn) elEditUserBtn.onclick = () => unlockField(elProfileUser);
 if (elEditEmailBtn) elEditEmailBtn.onclick = () => unlockField(elProfileEmail);
 if (elChangePassBtn) elChangePassBtn.onclick = () => {
-    elAudioMenu.classList.remove('active');
-    requestPasswordChange();
+    if (elAudioMenu) elAudioMenu.classList.remove('active');
+    if (!currentUser) showView('auth-view');
+    else requestPasswordChange();
 };
 
 document.querySelectorAll('.mode-btn').forEach(btn => btn.onclick = () => setMode(btn.dataset.mode));
@@ -1353,18 +1366,8 @@ const elBtnSaveNewCard = document.getElementById('btn-save-new-card');
 if (elBtnManual) elBtnManual.onclick = () => showView('manual-view');
 if (elBtnWallet) elBtnWallet.onclick = () => showView('wallet-view');
 if (elBtnAdmin) elBtnAdmin.onclick = () => showView('admin-view');
-if (elProfileTrigger) elProfileTrigger.onclick = () => {
-    if (currentUser) showView('profile-view');
-    else showView('auth-view');
-};
-// btn-login-trigger: SEMPRE abre a tela de auth (login ou conta)
-if (elLoginTrigger) elLoginTrigger.onclick = () => showView('auth-view');
-if (elAuthLogoutBtn) elAuthLogoutBtn.onclick = () => { showView('game-screen'); signOut(); };
 
-if (elChangePassBtn) elChangePassBtn.onclick = () => {
-    if (!currentUser) showView('auth-view');
-    else requestPasswordChange();
-};
+if (elAuthLogoutBtn) elAuthLogoutBtn.onclick = () => { showView('game-screen'); signOut(); };
 
 // Close Buttons (X and Bottom)
 const elBtnCloseProfileX = document.getElementById('btn-close-profile-x');
