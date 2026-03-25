@@ -98,18 +98,23 @@
             </div>
             <div id="pvp-status" class="pvp-status-bar hidden">
                 <span class="searching-dot"></span>
-                <span id="pvp-status-text">Searching for opponent...</span>
-                <span id="pvp-timer" class="pvp-timer hidden">5s</span>
+                <span id="pvp-status-text"></span>
+                <div class="pvp-wallets">
+                    <div class="pvp-wallet-chip" id="pvp-wallet-p1">JK$ --</div>
+                    <div class="pvp-wallet-chip pvp-wallet-chip--right" id="pvp-wallet-p2">JK$ --</div>
+                </div>
             </div>
             <div class="arena-card">
                 <div class="players-row">
                     <div class="player-unit">
+                        <div class="pvp-timer-wrap"><span id="p1-timer" class="pvp-timer hidden">5s</span></div>
                         <div class="avatar-box"><img id="p1-avatar" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" alt="P1" class="avatar-img"></div>
                         <div id="p1-label" class="player-name">@YOU</div>
                         <div id="p1-status" class="player-status" data-i18n="awaiting">Awaiting...</div>
                     </div>
                     <div id="vs-button" class="vs-symbol" style="cursor: pointer;" title="Resetar Placar">VS</div>
                     <div class="player-unit">
+                        <div class="pvp-timer-wrap"><span id="p2-timer" class="pvp-timer hidden">5s</span></div>
                         <div class="avatar-box"><img id="p2-avatar" src="images/warrior_bot.png" alt="P2" class="avatar-img"></div>
                         <div id="p2-label" class="player-name">GRÃO-MESTRE</div>
                         <div id="p2-status" class="player-status" data-i18n="thinking">Thinking...</div>

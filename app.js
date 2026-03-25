@@ -165,6 +165,7 @@ let myUsername = localStorage.getItem('battlerps-user-handle');
 let currentUser = null;
 let pvpDiscoveryInterval = null;
 let myAvatarUrl = 'https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png';
+let pvpSearchReadyAt = 0; // Timestamp mínimo para aceitar novo parceiro
 
 async function checkUser() {
     const { data: { session } } = await db.auth.getSession();
@@ -311,7 +312,10 @@ const elSfxBounce = document.getElementById('sfx-bounce');
 const elSfxReveal = document.getElementById('sfx-reveal');
 const elPvpStatus = document.getElementById('pvp-status');
 const elPvpText = document.getElementById('pvp-status-text');
-const elPvpTimer = document.getElementById('pvp-timer');
+const elP1Timer = document.getElementById('p1-timer');
+const elP2Timer = document.getElementById('p2-timer');
+const elPvpWalletP1 = document.getElementById('pvp-wallet-p1');
+const elPvpWalletP2 = document.getElementById('pvp-wallet-p2');
 const elUsernameOverlay = document.getElementById('username-overlay');
 const elUsernameInput = document.getElementById('username-input');
 const elSaveUsername = document.getElementById('btn-save-username');
@@ -672,12 +676,24 @@ function showError(txt) {
 function startPvPCutdown() {
     if (countdownInterval) clearInterval(countdownInterval);
     currentTime = 5;
-    elPvpTimer.classList.remove('hidden');
-    elPvpTimer.textContent = currentTime + 's';
+
+    // Mostra o timer no lado de quem ainda NÃO jogou
+    // firstPlayedSide indica quem jogou PRIMEIRO:
+    //   'local'  = eu joguei primeiro  → oponente ainda não jogou → timer no P2
+    //   'remote' = oponente jogou primeiro → eu ainda não joguei → timer no P1
+    const showP1 = (firstPlayedSide === 'remote');
+    const showP2 = (firstPlayedSide === 'local');
+
+    elP1Timer.classList.toggle('hidden', !showP1);
+    elP2Timer.classList.toggle('hidden', !showP2);
+    elP1Timer.textContent = currentTime + 's';
+    elP2Timer.textContent = currentTime + 's';
+
     if (firstPlayedSide === 'remote') elPvpText.textContent = translations[currentLang]['opponent-played'];
     countdownInterval = setInterval(() => {
         currentTime--;
-        elPvpTimer.textContent = currentTime + 's';
+        elP1Timer.textContent = currentTime + 's';
+        elP2Timer.textContent = currentTime + 's';
         if (currentTime <= 0) {
             clearInterval(countdownInterval);
             handleTimeout();
@@ -686,7 +702,8 @@ function startPvPCutdown() {
 }
 
 function handleTimeout() {
-    elPvpTimer.classList.add('hidden');
+    elP1Timer.classList.add('hidden');
+    elP2Timer.classList.add('hidden');
     if (myMove && !pvpMoveReceived) {
         botMove = 'rock'; processPayout(false, true);
     } else if (!myMove && pvpMoveReceived) {
@@ -696,7 +713,8 @@ function handleTimeout() {
 
 function stopCountdown() {
     if (countdownInterval) clearInterval(countdownInterval);
-    elPvpTimer.classList.add('hidden');
+    elP1Timer.classList.add('hidden');
+    elP2Timer.classList.add('hidden');
 }
 
 function applyLanguage(lang) {
@@ -721,11 +739,10 @@ function updatePhaseText() {
     else if (phase === 'RESULT') elPhase.textContent = dic['phase-over'];
 }
 
-function updateBalance(newBalance) {
-    balance = newBalance;
-    const formatted = formatJK(balance);
-    if (elBalance) elBalance.textContent = formatted;
-    if (elShopBalance) elShopBalance.textContent = formatted;
+function updateBalance(val) {
+    balance = parseFloat(val) || 0;
+    if (elBalance) elBalance.textContent = formatJK(balance);
+    if (elShopBalance) elShopBalance.textContent = formatJK(balance);
     
     // Sync Chip colors
     const applyChipClass = (chip) => {
@@ -742,6 +759,8 @@ function updateBalance(newBalance) {
     
     applyChipClass(elBalanceChip);
     applyChipClass(elShopBalanceChip);
+    // Atualiza chip da carteira PvP (P1)
+    if (elPvpWalletP1) elPvpWalletP1.textContent = formatJK(balance);
 }
 
 function updateScoreUI() {
@@ -800,6 +819,54 @@ async function setMode(mode) {
     }
 }
 
+// Volta ao estado de busca (antena) — usado quando oponente sai
+function resetToSearching() {
+    const dic = translations[currentLang];
+    partnerId = null;
+    partnerName = null;
+    pvpMoveReceived = null;
+    firstPlayedSide = null;
+    botMove = null;
+    myMove = null;
+    phase = 'COMMIT'; updatePhaseText();
+
+    // Reabilita controles de jogada
+    document.getElementById('move-controls').style.pointerEvents = 'auto';
+    document.getElementById('move-controls').style.opacity = '1';
+    document.querySelectorAll('.rps-btn').forEach(b => b.classList.remove('selected'));
+    elResultBanner.classList.add('hidden');
+
+    // Mostra antena com delay mínimo de 5s
+    elP2Avatar.src = 'images/satellite.png';
+    elP2Avatar.closest('.avatar-box').classList.add('searching');
+    elP2Label.textContent = dic['awaiting'];
+    elP1Status.textContent = dic['awaiting'];
+    elP1Status.style.color = 'var(--on-surface-variant)';
+    elP2Status.textContent = dic['awaiting'];
+    elP2Status.style.color = 'var(--on-surface-variant)';
+    elPvpWalletP2.textContent = 'JK$ --'; // Reset P2 chip
+    elPvpWalletP2.style.opacity = '0.4';
+
+    // Define o momento mínimo em que poderemos aceitar um novo oponente (agora + 5s)
+    pvpSearchReadyAt = Date.now() + 5000;
+
+    // Reinicia o loop de discovery
+    if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
+    const sendDiscovery = () => {
+        if (!partnerId) {
+            pvpChannel.send({
+                type: 'broadcast',
+                event: 'discovery',
+                payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance }
+            });
+        } else {
+            clearInterval(pvpDiscoveryInterval);
+        }
+    };
+    sendDiscovery();
+    pvpDiscoveryInterval = setInterval(sendDiscovery, 2000);
+}
+
 function startPvPDiscovery() {
     if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
     if (pvpChannel) pvpChannel.unsubscribe();
@@ -811,13 +878,17 @@ function startPvPDiscovery() {
     // Avatar da antena: sinaliza busca
     elP2Avatar.src = 'images/satellite.png';
     elP2Avatar.closest('.avatar-box').classList.add('searching');
+    // Carteiras: mostra P1, oculta P2 até encontrar oponente
+    elPvpWalletP1.textContent = formatJK(balance);
+    elPvpWalletP2.textContent = 'JK$ --';
+    elPvpWalletP2.style.opacity = '0.4';
     partnerId = null;
     partnerName = null;
 
     pvpChannel = db.channel('lobby', { config: { broadcast: { self: false } } });
     pvpChannel
         .on('broadcast', { event: 'discovery' }, ({ payload }) => {
-            if (!partnerId && payload.wallet !== currentWallet) {
+            if (!partnerId && payload.wallet !== currentWallet && Date.now() >= pvpSearchReadyAt) {
                 console.log("Opponent discovery received:", payload.username);
                 partnerId = payload.wallet;
                 partnerName = payload.username || dic['pvp-mode'];
@@ -826,19 +897,23 @@ function startPvPDiscovery() {
                 elP2Avatar.closest('.avatar-box').classList.remove('searching');
                 if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
+                if (payload.balance !== undefined) {
+                    elPvpWalletP2.textContent = formatJK(payload.balance);
+                    elPvpWalletP2.style.opacity = '1';
+                }
                 
                 // Responder com ACK para confirmar a conexão
                 pvpChannel.send({ 
                     type: 'broadcast', 
                     event: 'ack', 
-                    payload: { to: partnerId, from: currentWallet, username: myUsername, avatar: myAvatarUrl } 
+                    payload: { to: partnerId, from: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance } 
                 });
                 
                 if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
             }
         })
         .on('broadcast', { event: 'ack' }, ({ payload }) => {
-            if (!partnerId && payload.to === currentWallet) {
+            if (!partnerId && payload.to === currentWallet && Date.now() >= pvpSearchReadyAt) {
                 console.log("Opponent ack received:", payload.username);
                 partnerId = payload.from;
                 partnerName = payload.username || dic['pvp-mode'];
@@ -847,6 +922,10 @@ function startPvPDiscovery() {
                 elP2Avatar.closest('.avatar-box').classList.remove('searching');
                 if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
+                if (payload.balance !== undefined) {
+                    elPvpWalletP2.textContent = formatJK(payload.balance);
+                    elPvpWalletP2.style.opacity = '1';
+                }
                 
                 if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
             }
@@ -871,6 +950,13 @@ function startPvPDiscovery() {
                 }
             }
         })
+        .on('broadcast', { event: 'disconnect' }, ({ payload }) => {
+            // Oponente saiu — volta à busca com animação de antena
+            if (payload.wallet === partnerId) {
+                console.log('Oponente desconectado:', payload.wallet);
+                resetToSearching();
+            }
+        })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
                 console.log("Subscribed to lobby, starting discovery loop...");
@@ -880,7 +966,7 @@ function startPvPDiscovery() {
                        pvpChannel.send({ 
                            type: 'broadcast', 
                            event: 'discovery', 
-                           payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl } 
+                           payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance } 
                        });
                    } else {
                        if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
@@ -890,6 +976,15 @@ function startPvPDiscovery() {
                 pvpDiscoveryInterval = setInterval(sendDiscovery, 2000);
             }
         });
+
+    // Avisa o canal quando esta aba fechar / recarregar
+    const sendDisconnect = () => {
+        if (pvpChannel && partnerId) {
+            pvpChannel.send({ type: 'broadcast', event: 'disconnect', payload: { wallet: currentWallet } });
+        }
+    };
+    window.addEventListener('beforeunload', sendDisconnect);
+    window.addEventListener('pagehide', sendDisconnect);
 }
 
 function selectMove(move, btn) {
