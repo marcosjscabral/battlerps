@@ -255,9 +255,12 @@ async function handleAuthTransition(session) {
             window.walletChannel = null;
         }
         currentUser = null;
-        myUsername = localStorage.getItem('battlerps-user-handle') || 'Player 1';
-        elP1Label.textContent = myUsername;
-        document.querySelector('.avatar-box .avatar-img').src = 'images/player_default.png';
+        myUsername = '@YOU'; 
+        myAvatarUrl = 'images/player_default.png';
+        
+        if (elP1Label) elP1Label.textContent = myUsername;
+        if (elP1Avatar) elP1Avatar.src = myAvatarUrl;
+        if (elProfilePreview) elProfilePreview.src = myAvatarUrl;
         
         // --- Atualiza visualização do Auth Modal para estado deslogado ---
         if (elAuthTabsGroup) elAuthTabsGroup.classList.remove('hidden');
@@ -616,22 +619,23 @@ async function init() {
 
     // Fallback/Guest Profile Logic
     if (!currentUser) {
-        const { data, error } = await db.from('user_profiles').select('balance, username, avatar_url').eq('wallet_address', currentWallet).single();
+        const { data } = await db.from('user_profiles').select('balance, username, avatar_url').eq('wallet_address', currentWallet).single();
+        
+        // FORÇAR PADRÃO PARA GUESTS (NÃO LOGADOS)
+        myUsername = '@YOU';
+        myAvatarUrl = 'images/player_default.png';
+        
         if (data) {
             updateBalance(data.balance);
-            if (data.username) {
-                myUsername = data.username;
-                elP1Label.textContent = myUsername;
-            }
-            if (data.avatar_url) {
-                myAvatarUrl = data.avatar_url;
-                elP1Avatar.src = myAvatarUrl;
-            }
+            // Ignoramos nome/avatar salvos no guest profile para manter o estado "bloqueado"
         } else {
             const initial = 1000.00;
             await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
             updateBalance(initial);
         }
+
+        if (elP1Label) elP1Label.textContent = myUsername;
+        if (elP1Avatar) elP1Avatar.src = myAvatarUrl;
     }
     
     // EXTREMELY CRITICAL: Show the arena by default!
