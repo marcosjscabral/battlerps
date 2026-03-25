@@ -744,23 +744,39 @@ function updateBalance(val) {
     if (elBalance) elBalance.textContent = formatJK(balance);
     if (elShopBalance) elShopBalance.textContent = formatJK(balance);
     
-    // Sync Chip colors
+    // Sync header chip colors
     const applyChipClass = (chip) => {
         if (!chip) return;
         chip.classList.remove('positive', 'empty', 'fictitious');
-        if (balance <= 0) {
-            chip.classList.add('empty');
-        } else if (currentUser) {
-            chip.classList.add('positive');
-        } else {
-            chip.classList.add('fictitious');
-        }
+        if (balance <= 0) chip.classList.add('empty');
+        else if (currentUser) chip.classList.add('positive');
+        else chip.classList.add('fictitious');
     };
-    
     applyChipClass(elBalanceChip);
     applyChipClass(elShopBalanceChip);
-    // Atualiza chip da carteira PvP (P1)
-    if (elPvpWalletP1) elPvpWalletP1.textContent = formatJK(balance);
+
+    // Atualiza chip da carteira PvP (P1) com texto e cor
+    if (elPvpWalletP1) {
+        elPvpWalletP1.textContent = formatJK(balance);
+        applyPvpWalletColor(elPvpWalletP1, balance, !!currentUser);
+    }
+
+    // Se estiver em PvP com oponente, avisa o oponente do novo saldo
+    if (gameMode === 'pvp' && partnerId && pvpChannel) {
+        pvpChannel.send({
+            type: 'broadcast',
+            event: 'balance-update',
+            payload: { from: currentWallet, balance: balance, isUser: !!currentUser }
+        });
+    }
+}
+
+// Aplica a cor padronizada ao chip de carteira PvP
+function applyPvpWalletColor(chip, bal, isUser) {
+    chip.classList.remove('pvp-wallet-positive', 'pvp-wallet-fictitious', 'pvp-wallet-empty');
+    if (bal <= 0) chip.classList.add('pvp-wallet-empty');
+    else if (isUser) chip.classList.add('pvp-wallet-positive');
+    else chip.classList.add('pvp-wallet-fictitious');
 }
 
 function updateScoreUI() {
@@ -880,8 +896,10 @@ function startPvPDiscovery() {
     elP2Avatar.closest('.avatar-box').classList.add('searching');
     // Carteiras: mostra P1, oculta P2 até encontrar oponente
     elPvpWalletP1.textContent = formatJK(balance);
+    applyPvpWalletColor(elPvpWalletP1, balance, !!currentUser);
     elPvpWalletP2.textContent = 'JK$ --';
     elPvpWalletP2.style.opacity = '0.4';
+    elPvpWalletP2.classList.remove('pvp-wallet-positive', 'pvp-wallet-fictitious', 'pvp-wallet-empty');
     partnerId = null;
     partnerName = null;
 
@@ -900,13 +918,14 @@ function startPvPDiscovery() {
                 if (payload.balance !== undefined) {
                     elPvpWalletP2.textContent = formatJK(payload.balance);
                     elPvpWalletP2.style.opacity = '1';
+                    applyPvpWalletColor(elPvpWalletP2, payload.balance, payload.isUser);
                 }
                 
                 // Responder com ACK para confirmar a conexão
                 pvpChannel.send({ 
                     type: 'broadcast', 
                     event: 'ack', 
-                    payload: { to: partnerId, from: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance } 
+                    payload: { to: partnerId, from: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance, isUser: !!currentUser } 
                 });
                 
                 if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
@@ -957,6 +976,14 @@ function startPvPDiscovery() {
                 resetToSearching();
             }
         })
+        .on('broadcast', { event: 'balance-update' }, ({ payload }) => {
+            // Atualiza carteira do oponente em tempo real
+            if (payload.from === partnerId) {
+                elPvpWalletP2.textContent = formatJK(payload.balance);
+                elPvpWalletP2.style.opacity = '1';
+                applyPvpWalletColor(elPvpWalletP2, payload.balance, payload.isUser);
+            }
+        })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
                 console.log("Subscribed to lobby, starting discovery loop...");
@@ -966,7 +993,7 @@ function startPvPDiscovery() {
                        pvpChannel.send({ 
                            type: 'broadcast', 
                            event: 'discovery', 
-                           payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance } 
+                           payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance, isUser: !!currentUser } 
                        });
                    } else {
                        if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
