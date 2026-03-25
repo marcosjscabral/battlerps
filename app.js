@@ -792,7 +792,9 @@ async function setMode(mode) {
         if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
         elPvpStatus.classList.add('hidden');
         elP2Label.textContent = translations[currentLang]['p2-label'];
-        elP2Avatar.src = 'images/warrior_bot.png'; // Volta avatar do Bot
+        // Restaura avatar do bot e remove estado de busca
+        elP2Avatar.closest('.avatar-box').classList.remove('searching');
+        elP2Avatar.src = 'images/warrior_bot.png';
         if (pvpChannel) pvpChannel.unsubscribe();
         elUsernameOverlay.classList.add('hidden');
     }
@@ -806,6 +808,9 @@ function startPvPDiscovery() {
     elPvpStatus.classList.remove('hidden');
     elPvpText.textContent = dic['searching'];
     elP2Label.textContent = dic['awaiting'];
+    // Avatar da antena: sinaliza busca
+    elP2Avatar.src = 'images/satellite.png';
+    elP2Avatar.closest('.avatar-box').classList.add('searching');
     partnerId = null;
     partnerName = null;
 
@@ -817,6 +822,8 @@ function startPvPDiscovery() {
                 partnerId = payload.wallet;
                 partnerName = payload.username || dic['pvp-mode'];
                 elP2Label.textContent = partnerName;
+                // Atualiza avatar: remove antena, mostra avatar do oponente
+                elP2Avatar.closest('.avatar-box').classList.remove('searching');
                 if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
                 
@@ -836,6 +843,8 @@ function startPvPDiscovery() {
                 partnerId = payload.from;
                 partnerName = payload.username || dic['pvp-mode'];
                 elP2Label.textContent = partnerName;
+                // Atualiza avatar: remove antena, mostra avatar do oponente
+                elP2Avatar.closest('.avatar-box').classList.remove('searching');
                 if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
                 
