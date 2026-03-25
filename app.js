@@ -1526,6 +1526,11 @@ async function loadAvatarStore() {
 
 async function selectAvatar(url, cardEl) {
     if (!currentUser) { alert('Faça login para trocar seu avatar!'); return; }
+    
+    // Confirmação antes de mudar
+    const ok = await showConfirm('NOVO AVATAR', 'Deseja usar este avatar no seu perfil?');
+    if (!ok) return;
+
     playSfx(elSfxClick);
 
     // Visual feedback imediato
@@ -1575,8 +1580,8 @@ async function saveNewAvatar() {
 
         nameInput.value = '';
         fileInput.value = '';
-        btn.textContent = '✅ Avatar adicionado!';
-        setTimeout(() => { btn.textContent = '➕ ADICIONAR AVATAR'; btn.disabled = false; }, 1500);
+        btn.textContent = '✅ Salvo!';
+        setTimeout(() => { btn.textContent = 'SALVAR'; btn.disabled = false; }, 1500);
         loadAdminAvatars();
     } catch (err) {
         alert('Erro: ' + err.message);
