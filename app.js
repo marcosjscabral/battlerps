@@ -187,7 +187,7 @@ async function handleAuthTransition(session) {
         // Atualiza UI para Logado (Verde)
         elLoginTrigger.textContent = '👤';
         elLoginTrigger.style.color = '#10b981';
-        elLoginTrigger.title = 'Sair da conta';
+        elLoginTrigger.title = 'Minha Conta';
         
         let activeProfile = profile;
         if (!activeProfile) {
@@ -1176,9 +1176,28 @@ if (elProfileTrigger) elProfileTrigger.onclick = () => {
     if (currentUser) showView('profile-view');
     else showView('auth-view');
 };
+// btn-login-trigger: SEMPRE abre a tela de auth (login ou conta)
 if (elLoginTrigger) elLoginTrigger.onclick = () => {
-    if (currentUser) showView('profile-view');
-    else showView('auth-view');
+    if (currentUser) {
+        // Quando logado: adapta o auth modal para mostrar opção de sair
+        elAuthPText.textContent = `Logado como ${currentUser.email}`;
+        elAuthView.querySelector('#auth-form-container').style.display = 'none';
+        document.getElementById('btn-auth-logout-inline')?.remove();
+        const logoutBtn = document.createElement('button');
+        logoutBtn.id = 'btn-auth-logout-inline';
+        logoutBtn.className = 'secondary-btn';
+        logoutBtn.style.cssText = 'width:100%; border-radius:12px; margin-top:20px;';
+        logoutBtn.textContent = 'Sair da Conta';
+        logoutBtn.onclick = () => { showView('game-screen'); signOut(); };
+        elAuthView.querySelector('.username-card').appendChild(logoutBtn);
+        showView('auth-view');
+    } else {
+        // Quando deslogado: mostra form normal
+        elAuthView.querySelector('#auth-form-container').style.display = '';
+        if (elAuthPText) elAuthPText.textContent = 'Acesse sua conta para entrar na Arena';
+        document.getElementById('btn-auth-logout-inline')?.remove();
+        showView('auth-view');
+    }
 };
 if (elChangePassBtn) elChangePassBtn.onclick = () => {
     if (!currentUser) showView('auth-view');
