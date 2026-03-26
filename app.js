@@ -250,10 +250,9 @@ async function handleAuthTransition(session) {
             }).subscribe();
 
     } else {
-        if (window.walletChannel) {
-            window.walletChannel.unsubscribe();
-            window.walletChannel = null;
-        }
+        // Estado Deslogado - Hard Reset local sem recarregar se possível, mas garantindo limpeza
+        sanitizeStateOnLogout();
+        
         currentUser = null;
         myUsername = '@YOU'; 
         myAvatarUrl = 'images/player_default.png';
@@ -266,6 +265,7 @@ async function handleAuthTransition(session) {
         if (elAuthTabsGroup) elAuthTabsGroup.classList.remove('hidden');
         if (elAuthFormContainer) elAuthFormContainer.classList.remove('hidden');
         if (elAuthLoggedInContainer) elAuthLoggedInContainer.classList.add('hidden');
+        if (elAuthUpdatePasswordContainer) elAuthUpdatePasswordContainer.classList.add('hidden');
         if (elAuthPText) elAuthPText.textContent = 'Acesse sua conta para entrar na Arena';
 
         // Atualiza UI para Deslogado (Azul)
@@ -273,8 +273,36 @@ async function handleAuthTransition(session) {
         elLoginTrigger.style.color = '#4285F4';
         elLoginTrigger.title = 'Fazer Login';
 
-        if (elBtnAdmin) elBtnAdmin.classList.add('hidden'); // Hide admin button if not logged in
+        if (elBtnAdmin) elBtnAdmin.classList.add('hidden');
     }
+}
+
+function sanitizeStateOnLogout() {
+    // Purgar caches de estado global
+    balance = 0;
+    updateBalance(0);
+    myMove = null;
+    botMove = null;
+    pvpMoveReceived = null;
+    partnerId = null;
+    if (pvpChannel) {
+        pvpChannel.unsubscribe();
+        pvpChannel = null;
+    }
+    if (window.walletChannel) {
+        window.walletChannel.unsubscribe();
+        window.walletChannel = null;
+    }
+    // Purgar localStorage sensível
+    localStorage.removeItem('battlerps-score-wins');
+    localStorage.removeItem('battlerps-score-draws');
+    localStorage.removeItem('battlerps-score-losses');
+    
+    // Resetar UI Components
+    if (elPvpStatus) elPvpStatus.classList.add('hidden');
+    if (elScoreWin) elScoreWin.textContent = '0';
+    if (elScoreDraw) elScoreDraw.textContent = '0';
+    if (elScoreLoss) elScoreLoss.textContent = '0';
 }
 
 function generateRandomUsername() {
@@ -380,6 +408,7 @@ const elAuthTabsGroup = document.getElementById('auth-tabs-group');
 const elAuthFormContainer = document.getElementById('auth-form-container');
 const elAuthLoggedInContainer = document.getElementById('auth-logged-in-container');
 const elAuthLogoutBtn = document.getElementById('btn-auth-logout');
+const elAuthUpdatePasswordContainer = document.getElementById('auth-update-password-container');
 const elAuthOverlay = elAuthView; 
 const elProfileOverlay = elProfileView;
 const elAuthEmailBtn = document.getElementById('btn-auth-submit'); // Re-using the updated name
@@ -490,13 +519,21 @@ async function signOut() {
     const ok = await showConfirm("LOGOUT", "Tem certeza que deseja sair da conta?");
     if (!ok) return;
     
-    // Zerar Placar no LocalStorage
-    localStorage.removeItem('battlerps-score-wins');
-    localStorage.removeItem('battlerps-score-draws');
-    localStorage.removeItem('battlerps-score-losses');
-    
     await db.auth.signOut();
-    location.reload();
+    
+    // LIMPEZA ANTIGRAVITY (Clean Slate Profundo)
+    // Remove todos os dados do navegador antes de recarregar
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Limpeza de cookies (opcional, mas recomendado)
+    document.cookie.split(";").forEach((c) => {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+
+    // Em vez de location.reload(), usamos o redirecionamento para a raiz
+    // Isso garante que o sistema de rotas do navegador comece do zero
+    location.href = '/';
 }
 
 function showConfirm(title, msg) {
@@ -627,8 +664,53 @@ async function init() {
 
     // Listen for Auth changes
     db.auth.onAuthStateChange(async (event, session) => {
-        await handleAuthTransition(session);
+        console.log("Auth Event:", event);
+        
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+            await handleAuthTransition(session);
+        } else if (event === 'SIGNED_OUT') {
+            await handleAuthTransition(null);
+        } else if (event === 'PASSWORD_RECOVERY') {
+            // Mostrar formulário de nova senha
+            showView('auth-view');
+            if (elAuthFormContainer) elAuthFormContainer.classList.add('hidden');
+            if (elAuthTabsGroup) elAuthTabsGroup.classList.add('hidden');
+            if (elAuthUpdatePasswordContainer) elAuthUpdatePasswordContainer.classList.remove('hidden');
+        }
     });
+
+    // Event Delegation for Forgot Password & Update Password
+    const elBtnForgot = document.getElementById('btn-forgot-password');
+    if (elBtnForgot) {
+        elBtnForgot.onclick = async () => {
+            const email = elEmailInput.value.trim();
+            if (!email) return alert("Digite seu e-mail primeiro");
+            
+            const { error } = await db.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin
+            });
+            if (error) alert("Erro: " + error.message);
+            else alert("Link de recuperação enviado para " + email);
+        };
+    }
+
+    const elBtnUpdateSubmit = document.getElementById('btn-update-password-submit');
+    const elUpdatePassInput = document.getElementById('update-password');
+    if (elBtnUpdateSubmit) {
+        elBtnUpdateSubmit.onclick = async () => {
+            const newPassword = elUpdatePassInput.value.trim();
+            if (newPassword.length < 6) return alert("A senha deve ter pelo menos 6 caracteres");
+            
+            const { error } = await db.auth.updateUser({ password: newPassword });
+            if (error) alert("Erro ao atualizar senha: " + error.message);
+            else {
+                alert("Senha atualizada com sucesso!");
+                if (elAuthUpdatePasswordContainer) elAuthUpdatePasswordContainer.classList.add('hidden');
+                showView('game-screen');
+                location.reload();
+            }
+        };
+    }
 
     // Fallback/Guest Profile Logic
     if (!currentUser) {

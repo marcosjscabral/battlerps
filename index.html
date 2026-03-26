@@ -156,9 +156,17 @@
                     <div class="input-stack">
                         <input type="email" id="auth-email" placeholder="E-mail" style="padding: 14px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px;">
                         <input type="password" id="auth-password" placeholder="Senha" style="padding: 14px; border-radius: 12px; border: 1px solid #eee;">
-                    </div>
+                    </div >
                     <button id="btn-auth-submit" class="battle-btn" style="margin-top: 20px;">ENTRAR NA ARENA</button>
+    
+                    <div style="width: 100%; text-align: center; margin-top: 15px;">
+                        <button type="button" id="btn-forgot-password" style="background: none; border: none; color: #a30032; font-size: 14px; cursor: pointer; text-decoration: underline;">
+                            Esqueci minha senha
+                        </button>
+                    </div>
+
                     <p id="auth-error-msg" class="error-msg hidden" style="margin-top: 15px;"></p>
+                    <button id="btn-forgot-password" class="link-btn" style="margin-top: 10px; background: none; border: none; color: #4285F4; text-decoration: underline; cursor: pointer; font-size: 0.9rem;">Esqueci minha senha</button>
                     <div style="margin: 20px 0; text-align: center; color: #999;">OU</div>
                     <button id="btn-auth-google" class="google-btn"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span></button>
                     <button id="btn-auth-close" class="secondary-btn" style="width: 100%; margin-top: 15px; border-radius: 12px; background: #f8f9fa; color: #666; font-weight: 500;">Voltar ao Jogo</button>
@@ -166,6 +174,14 @@
                 <div id="auth-logged-in-container" class="hidden" style="width: 100%; text-align: center;">
                     <button id="btn-auth-logout" class="secondary-btn" style="width: 100%; border-radius: 12px; margin-top: 10px; background: #fff0f3; color: #b60d3d; border: 1px solid #ffd6de; font-weight: 700;">Sair da Conta</button>
                     <button class="secondary-btn" onclick="showView('game-screen')" style="width: 100%; margin-top: 10px; border-radius: 12px; background: #f8f9fa; color: #666;">Voltar ao Jogo</button>
+                </div>
+                <!-- Update Password Flow -->
+                <div id="auth-update-password-container" class="hidden">
+                    <h3 style="margin-bottom: 20px; color: var(--primary);">Atualizar Senha</h3>
+                    <div class="input-stack">
+                        <input type="password" id="update-password" placeholder="Nova Senha" style="padding: 14px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px; width: 100%;">
+                    </div>
+                    <button id="btn-update-password-submit" class="battle-btn" style="margin-top: 10px; width: 100%;">SALVAR NOVA SENHA</button>
                 </div>
             </div>
         </div>
@@ -312,6 +328,39 @@
     </div>
     
     <script src="app.js?v=2.9"></script>
+    <script>
+    // Ativador de Recuperação Antigravity
+
+    document.addEventListener('click', async (e) => {
+        
+    if (e.target && e.target.id === 'btn-forgot-password') {
+        // Busca o email no input correto
+        const email = document.getElementById('auth-email')?.value;
+        
+        if (!email) {
+            alert("Por favor, digite seu e-mail no campo acima primeiro.");
+            return;
+        }
+
+        const btn = e.target;
+        btn.innerText = "Enviando...";
+        btn.disabled = true;
+
+        const { error } = await db.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin
+        });
+
+        if (error) {
+            alert("Erro: " + error.message);
+        } else {
+            alert("Link enviado! Verifique seu e-mail.");
+        }
+        
+        btn.innerText = "Esqueci minha senha";
+        btn.disabled = false;
+    }
+});
+</script>
 </body>
 
 </html>
