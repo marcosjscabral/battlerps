@@ -192,19 +192,10 @@ async function handleAuthTransition(session) {
         
         let activeProfile = profile;
         if (!activeProfile) {
-            // Se for o primeiro login do usuário, nós criamos o perfil dele
-            myUsername = generateRandomUsername();
-            const defaultAvatar = 'images/player_default.png';
-            const novoPerfil = { 
-                id: currentUser.id, 
-                wallet_address: currentWallet, 
-                username: myUsername, 
-                balance: 1000.00,
-                avatar_url: defaultAvatar
-            };
-            const { error: upsertError } = await db.from('user_profiles').upsert(novoPerfil);
-            if (upsertError) alert("Erro ao criar perfil: " + upsertError.message);
-            activeProfile = novoPerfil;
+            // Se o perfil ainda não existir no banco (falha no trigger?), avisamos
+            alert("Perfil de usuário não sincronizado. Por favor, faça logout e entre novamente para ativar sua conta.");
+            // Mantemos um perfil local temporário para não quebrar a UI, mas as operações falharão se não houver linha no DB
+            activeProfile = { id: currentUser.id, username: generateRandomUsername(), balance: 1500.00, avatar_url: 'images/player_default.png' };
         }
 
         myUsername = activeProfile.username;
@@ -1677,20 +1668,22 @@ async function purchaseAvatar(av) {
     const ok = await showConfirm('ADQUIRIR AVATAR', `Deseja comprar "${av.name}" por JK$ ${av.price}?`);
     if (!ok) return;
 
-    // Process Purchase
-    const newBalance = balance - av.price;
-    const newUnlocked = [...myUnlockedAvatars, av.id];
+    // Process Purchase via Atomic RPC
+    const { data, error: rpcErr } = await db.rpc('acquire_avatar', { avatar_id: av.id });
 
-    const { error: updErr } = await db.from('user_profiles').update({
-        balance: newBalance,
-        unlocked_skins: newUnlocked
-    }).eq('id', currentUser.id);
+    if (rpcErr) { 
+        alert('Erro técnico na transação: ' + rpcErr.message); 
+        return; 
+    }
 
-    if (updErr) { alert('Erro na compra: ' + updErr.message); return; }
+    if (!data.success) {
+        alert('Falha na compra: ' + data.error);
+        return;
+    }
 
-    // Update Local State
-    balance = newBalance;
-    myUnlockedAvatars = newUnlocked;
+    // Update Local State based on server response
+    balance = data.new_balance;
+    myUnlockedAvatars = [...myUnlockedAvatars, av.id]; // we know it succeeded
     if (elBalance) elBalance.textContent = formatJK(balance);
     if (elBalanceChip) elBalanceChip.textContent = formatJK(balance);
     if (elShopBalance) elShopBalance.textContent = formatJK(balance);
