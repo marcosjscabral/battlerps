@@ -245,7 +245,7 @@ async function handleAuthTransition(session) {
         sanitizeStateOnLogout();
         
         currentUser = null;
-        myUsername = '@YOU'; 
+        myUsername = '@Player1'; 
         myAvatarUrl = 'images/player_default.png';
         
         if (elP1Label) elP1Label.textContent = myUsername;
@@ -708,7 +708,7 @@ async function init() {
         const { data } = await db.from('user_profiles').select('balance, username, avatar_url').eq('wallet_address', currentWallet).single();
         
         // FORÇAR PADRÃO PARA GUESTS (NÃO LOGADOS)
-        myUsername = '@YOU';
+        myUsername = '@Player1';
         myAvatarUrl = 'images/player_default.png';
         
         if (data) {
