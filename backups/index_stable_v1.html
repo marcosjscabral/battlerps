@@ -17,11 +17,16 @@
         <div class="menu-dropdown" id="audio-menu">
             <button class="menu-trigger" id="menu-btn">☰</button>
             <div class="menu-options" id="menu-options">
-                <button class="menu-item" id="btn-profile-trigger">👤 <span data-i18n="menu-profile">Profile</span></button>
-                <button class="menu-item" id="btn-change-password-trigger">🔑 <span data-i18n="menu-password">Trocar Senha</span></button>
-                <button class="menu-item" id="btn-wallet-trigger">💳 <span data-i18n="menu-wallet">Wallet Shop</span></button>
-                <button class="menu-item" id="btn-manual-trigger">📖 <span data-i18n="menu-manual">Manual</span></button>
-                <button class="menu-item hidden" id="btn-admin-trigger">⚙️ <span data-i18n="menu-admin">Admin Center</span></button>
+                <button class="menu-item" id="btn-profile-trigger">👤 <span
+                        data-i18n="menu-profile">Profile</span></button>
+                <button class="menu-item" id="btn-change-password-trigger">🔑 <span data-i18n="menu-password">Trocar
+                        Senha</span></button>
+                <button class="menu-item" id="btn-wallet-trigger">💳 <span data-i18n="menu-wallet">Wallet
+                        Shop</span></button>
+                <button class="menu-item" id="btn-manual-trigger">📖 <span
+                        data-i18n="menu-manual">Manual</span></button>
+                <button class="menu-item hidden" id="btn-admin-trigger">⚙️ <span data-i18n="menu-admin">Admin
+                        Center</span></button>
                 <div style="padding: 10px; border-top: 1px solid #eee;">
                     <span class="score-label" data-i18n="music">MUSIC</span>
                     <div class="slider-row">
@@ -94,7 +99,8 @@
         <div id="game-screen">
             <div class="mode-selector">
                 <button id="btn-mode-bot" class="mode-btn active" data-mode="bot">🆚 BOT</button>
-                <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span class="badge-new">NEW</span></button>
+                <button id="btn-mode-pvp" class="mode-btn" data-mode="pvp">👥 PVP <span
+                        class="badge-new">NEW</span></button>
             </div>
             <div id="pvp-status" class="pvp-status-bar hidden">
                 <span class="searching-dot"></span>
@@ -104,23 +110,28 @@
             <div class="arena-card">
                 <div class="players-row">
                     <div class="player-unit">
-                        <div class="avatar-box"><img src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" alt="P1" class="avatar-img"></div>
-                        <div id="p1-label" class="player-name">@YOU</div>
+                        <div class="avatar-box"><img
+                                src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png"
+                                alt="P1" class="avatar-img"></div>
+                        <div id="p1-label" class="player-name">@Player1</div>
                         <div id="p1-status" class="player-status" data-i18n="awaiting">Awaiting...</div>
                     </div>
                     <div id="vs-button" class="vs-symbol" style="cursor: pointer;" title="Resetar Placar">VS</div>
                     <div class="player-unit">
                         <div class="avatar-box"><img src="images/warrior_bot.png" alt="P2" class="avatar-img"></div>
-                        <div id="p2-label" class="player-name">GRÃO-MESTRE</div>
+                        <div id="p2-label" class="player-name">Mestre Dark</div>
                         <div id="p2-status" class="player-status" data-i18n="thinking">Thinking...</div>
                     </div>
                 </div>
                 <div class="score-board">
-                    <div class="score-item win"><span class="score-label" data-i18n="score-wins">WINS</span><span id="score-win-count" class="score-value">0</span></div>
+                    <div class="score-item win"><span class="score-label" data-i18n="score-wins">WINS</span><span
+                            id="score-win-count" class="score-value">0</span></div>
                     <div class="score-divider"></div>
-                    <div class="score-item draw"><span class="score-label" data-i18n="score-draws">DRAWS</span><span id="score-draw-count" class="score-value">0</span></div>
+                    <div class="score-item draw"><span class="score-label" data-i18n="score-draws">DRAWS</span><span
+                            id="score-draw-count" class="score-value">0</span></div>
                     <div class="score-divider"></div>
-                    <div class="score-item loss"><span class="score-label" data-i18n="score-losses">LOSSES</span><span id="score-loss-count" class="score-value">0</span></div>
+                    <div class="score-item loss"><span class="score-label" data-i18n="score-losses">LOSSES</span><span
+                            id="score-loss-count" class="score-value">0</span></div>
                 </div>
                 <div class="arena-header">
                     <div class="phase-chip" id="phase-chip" data-i18n="phase-committing">COMMITTING</div>
@@ -131,9 +142,13 @@
                     </div>
                 </div>
                 <div class="selection-grid" id="move-controls">
-                    <button class="move-card rps-btn" data-move="rock"><img class="move-emoji" src="images/rock.png" alt="✊"><span class="move-label" data-i18n="rock">ROCK</span></button>
-                    <button class="move-card rps-btn" data-move="paper"><img class="move-emoji" src="images/paper.png" alt="🖐️"><span class="move-label" data-i18n="paper">PAPER</span></button>
-                    <button class="move-card rps-btn" data-move="scissors"><img class="move-emoji" src="images/scissors.png" alt="✌️"><span class="move-label" data-i18n="scissors">SCISSORS</span></button>
+                    <button class="move-card rps-btn" data-move="rock"><img class="move-emoji" src="images/rock.png"
+                            alt="✊"><span class="move-label" data-i18n="rock">ROCK</span></button>
+                    <button class="move-card rps-btn" data-move="paper"><img class="move-emoji" src="images/paper.png"
+                            alt="🖐️"><span class="move-label" data-i18n="paper">PAPER</span></button>
+                    <button class="move-card rps-btn" data-move="scissors"><img class="move-emoji"
+                            src="images/scissors.png" alt="✌️"><span class="move-label"
+                            data-i18n="scissors">SCISSORS</span></button>
                 </div>
             </div>
             <div id="recon-msg" class="recon-payout hidden" data-i18n="syncing">SYNCING PAYOUT...</div>
@@ -145,17 +160,24 @@
                     <button class="auth-tab active" data-tab="login">LOGIN</button>
                     <button class="auth-tab" data-tab="signup">SIGNUP</button>
                 </div>
-                <p id="auth-p-text" style="color: #666; font-size: 0.95rem; margin-bottom: 24px;">Acesse sua conta para entrar na Arena</p>
+                <p id="auth-p-text" style="color: #666; font-size: 0.95rem; margin-bottom: 24px;">Acesse sua conta para
+                    entrar na Arena</p>
                 <div id="auth-form-container">
                     <div class="input-stack">
-                        <input type="email" id="auth-email" placeholder="E-mail" style="padding: 14px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px;">
-                        <input type="password" id="auth-password" placeholder="Senha" style="padding: 14px; border-radius: 12px; border: 1px solid #eee;">
+                        <input type="email" id="auth-email" placeholder="E-mail"
+                            style="padding: 14px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 10px;">
+                        <input type="password" id="auth-password" placeholder="Senha"
+                            style="padding: 14px; border-radius: 12px; border: 1px solid #eee;">
                     </div>
                     <button id="btn-auth-submit" class="battle-btn" style="margin-top: 20px;">ENTRAR NA ARENA</button>
                     <p id="auth-error-msg" class="error-msg hidden" style="margin-top: 15px;"></p>
                     <div style="margin: 20px 0; text-align: center; color: #999;">OU</div>
-                    <button id="btn-auth-google" class="google-btn"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span></button>
-                    <button id="btn-auth-close" class="secondary-btn" style="width: 100%; margin-top: 15px; border-radius: 12px; background: #f8f9fa; color: #666; font-weight: 500;">Voltar ao Jogo</button>
+                    <button id="btn-auth-google" class="google-btn"><img
+                            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                            alt="G"><span>Google</span></button>
+                    <button id="btn-auth-close" class="secondary-btn"
+                        style="width: 100%; margin-top: 15px; border-radius: 12px; background: #f8f9fa; color: #666; font-weight: 500;">Voltar
+                        ao Jogo</button>
                 </div>
             </div>
         </div>
@@ -169,22 +191,30 @@
                     </div>
                 </div>
                 <div class="profile-pic-container">
-                    <img id="profile-avatar-preview" src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png" class="avatar-img-large">
+                    <img id="profile-avatar-preview"
+                        src="https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png"
+                        class="avatar-img-large">
                     <label for="avatar-upload" class="avatar-edit-icon">✏️</label>
                     <input type="file" id="avatar-upload" accept="image/*" hidden>
                 </div>
                 <div class="input-stack">
                     <div class="input-group">
-                        <span class="handle-prefix">@</span><input type="text" id="profile-username" placeholder="Nickname" maxlength="20" readonly class="readonly-input"><button class="edit-btn-inline" id="btn-edit-username">✏️</button>
+                        <span class="handle-prefix">@</span><input type="text" id="profile-username"
+                            placeholder="Nickname" maxlength="20" readonly class="readonly-input"><button
+                            class="edit-btn-inline" id="btn-edit-username">✏️</button>
                     </div>
                     <div class="input-group">
-                        <input type="email" id="profile-email" placeholder="E-mail" readonly class="readonly-input"><button class="edit-btn-inline" id="btn-edit-email">✏️</button>
+                        <input type="email" id="profile-email" placeholder="E-mail" readonly
+                            class="readonly-input"><button class="edit-btn-inline" id="btn-edit-email">✏️</button>
                     </div>
                 </div>
-                <p id="profile-timer-msg" style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px; font-weight: 600;" class="hidden"></p>
+                <p id="profile-timer-msg"
+                    style="font-size: 0.75rem; color: #ef4444; margin-bottom: 12px; font-weight: 600;" class="hidden">
+                </p>
                 <div class="btn-group" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
                     <button id="btn-save-profile" class="battle-btn">SALVAR ALTERAÇÕES</button>
-                    <button id="btn-logout" class="secondary-btn" style="width: 100%; border-radius: 16px;">Sair do Jogo</button>
+                    <button id="btn-logout" class="secondary-btn" style="width: 100%; border-radius: 16px;">Sair do
+                        Jogo</button>
                 </div>
                 <div class="shop-footer">
                     <button class="secondary-btn" id="btn-close-profile-bottom">Voltar ao Jogo</button>
@@ -194,7 +224,9 @@
 
         <div id="manual-view" class="hidden">
             <div class="manual-container">
-                <div class="manual-header"><h2>📖 Manual</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div>
+                <div class="manual-header">
+                    <h2>📖 Manual</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button>
+                </div>
                 <div class="manual-content">
                     <p><strong>Cores JK$:</strong> Verde (Real), Laranja (Fictício), Cinza (Zero).</p>
                     <p>Vit: +10, Der: -10, Emp: -5.</p>
@@ -205,8 +237,13 @@
         <div id="wallet-view" class="hidden">
             <div class="shop-container">
                 <div class="shop-header">
-                    <div class="shop-title-row"><h2>💳 Wallet Shop</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div>
-                    <div class="shop-balance-banner" id="shop-balance-chip"><span class="banner-label">SALDO:</span><h3 id="shop-current-balance">JK$ --</h3></div>
+                    <div class="shop-title-row">
+                        <h2>💳 Wallet Shop</h2><button class="close-x-btn"
+                            onclick="showView('game-screen')">&times;</button>
+                    </div>
+                    <div class="shop-balance-banner" id="shop-balance-chip"><span class="banner-label">SALDO:</span>
+                        <h3 id="shop-current-balance">JK$ --</h3>
+                    </div>
                 </div>
                 <div class="shop-grid" id="shop-cards-grid"></div>
             </div>
@@ -214,7 +251,11 @@
 
         <div id="admin-view" class="hidden">
             <div class="shop-container">
-                <div class="shop-header"><div class="shop-title-row"><h2>⚙️ Admin</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button></div></div>
+                <div class="shop-header">
+                    <div class="shop-title-row">
+                        <h2>⚙️ Admin</h2><button class="close-x-btn" onclick="showView('game-screen')">&times;</button>
+                    </div>
+                </div>
                 <div class="admin-form-card">
                     <input type="file" id="admin-card-image" accept="image/*">
                     <input type="number" id="admin-card-amount" placeholder="Quantidade JK">
@@ -227,7 +268,8 @@
         <div id="username-overlay" class="username-overlay hidden">
             <div class="username-card">
                 <h2>BATTLE ID</h2>
-                <div class="input-group"><span class="handle-prefix">@</span><input type="text" id="username-input" placeholder="nickname" maxlength="20"></div>
+                <div class="input-group"><span class="handle-prefix">@</span><input type="text" id="username-input"
+                        placeholder="nickname" maxlength="20"></div>
                 <button id="btn-save-username" class="battle-btn">JOIN</button>
                 <p id="username-error" class="error-msg hidden"></p>
             </div>
@@ -239,12 +281,15 @@
                 <p id="confirm-msg">Deseja realizar esta ação?</p>
                 <div style="display: flex; gap: 12px; margin-top: 20px;">
                     <button id="btn-confirm-yes" class="battle-btn" style="flex: 1;">SIM</button>
-                    <button id="btn-confirm-no" class="secondary-battle-btn" style="flex: 1; border-radius: 16px; margin: 0;">NÃO</button>
+                    <button id="btn-confirm-no" class="secondary-battle-btn"
+                        style="flex: 1; border-radius: 16px; margin: 0;">NÃO</button>
                 </div>
             </div>
         </div>
 
-        <div id="countdown-overlay" class="animation-overlay hidden"><h1 id="countdown-text">3</h1></div>
+        <div id="countdown-overlay" class="animation-overlay hidden">
+            <h1 id="countdown-text">3</h1>
+        </div>
         <div id="toast-success" class="toast-success hidden">Sucesso!</div>
     </main>
 
@@ -255,7 +300,7 @@
             <div id="p2-anim-hand" class="hand"><img src="images/rock.png" class="anim-emoji-img"></div>
         </div>
     </div>
-    
+
     <script src="app.js?v=2.8"></script>
 </body>
 
