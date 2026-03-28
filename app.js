@@ -173,17 +173,17 @@ let currentUser = null;
 let pvpDiscoveryInterval = null;
 let myAvatarUrl = 'https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png';
 let myUnlockedAvatars = [];
-let myHandImages = { rock: null, paper: null, scissors: null };
+let myHandImages = { left: { rock: null, paper: null, scissors: null }, right: { rock: null, paper: null, scissors: null } };
 let pvpSearchReadyAt = 0; // Timestamp mínimo para aceitar novo parceiro
 
-async function checkUser() {
-    const { data: { session } } = await db.auth.getSession();
-    await handleAuthTransition(session);
-}
+// A variável currentUser já deve estar declarada no topo.
+// Removendo checkUser para usar apenas onAuthStateChange que é mais estável.
 
 async function handleAuthTransition(session) {
     if (session && session.user) {
         currentUser = session.user;
+        console.log("User identifying as:", currentUser.email);
+
         if (elBtnAdmin) {
             if (currentUser.email === 'marcosjscabral@gmail.com') {
                 elBtnAdmin.classList.remove('hidden');
@@ -194,60 +194,52 @@ async function handleAuthTransition(session) {
 
         const { data: profile } = await db.from('user_profiles').select('*').eq('id', currentUser.id).single();
         
-        // Atualiza UI para Logado (Verde)
-        elLoginTrigger.textContent = '👤';
-        elLoginTrigger.style.color = '#10b981';
-        elLoginTrigger.title = 'Minha Conta';
+        // Atualiza UI para Logado
+        if (elLoginTrigger) {
+            elLoginTrigger.textContent = '👤';
+            elLoginTrigger.style.color = '#10b981';
+            elLoginTrigger.title = 'Minha Conta';
+        }
         
         let activeProfile = profile;
         if (!activeProfile) {
-            // Se o perfil ainda não existir no banco (falha no trigger?), avisamos
-            alert("Perfil de usuário não sincronizado. Por favor, faça logout e entre novamente para ativar sua conta.");
-            // Mantemos um perfil local temporário para não quebrar a UI, mas as operações falharão se não houver linha no DB
-            activeProfile = { id: currentUser.id, username: generateRandomUsername(), balance: 1500.00, avatar_url: 'images/player_default.png' };
+            console.log("Perfil não encontrado, criando novo...");
+            const defaultName = generateRandomUsername();
+            const { data: newProfile, error: insErr } = await db.from('user_profiles').insert([
+                { id: currentUser.id, username: defaultName, balance: 1500.00, avatar_url: 'images/player_default.png' }
+            ]).select().single();
+            
+            activeProfile = newProfile || { id: currentUser.id, username: defaultName, balance: 1500.00, avatar_url: 'images/player_default.png' };
         }
 
         myUsername = activeProfile.username;
-        if (!myUsername) {
-            myUsername = generateRandomUsername();
-            const { error: updError } = await db.from('user_profiles').update({ username: myUsername }).eq('id', currentUser.id);
-            if (updError) alert("Erro ao atualizar nome: " + updError.message);
-            activeProfile.username = myUsername;
-        }
-
         updateBalance(activeProfile.balance || 0);
-        elP1Label.textContent = myUsername;
+        if (elP1Label) elP1Label.textContent = myUsername;
         
         if (activeProfile.avatar_url) {
             myAvatarUrl = activeProfile.avatar_url;
-            elP1Avatar.src = myAvatarUrl;
-            elProfilePreview.src = myAvatarUrl;
+            if (elP1Avatar) elP1Avatar.src = myAvatarUrl;
+            if (elProfilePreview) elProfilePreview.src = myAvatarUrl;
             
             // Sync with game UI
-            elP1Label.innerText = '@' + myUsername;
+            if (elP1Label) elP1Label.innerText = myUsername;
             updateBalanceUI();
 
-            // Load hand images for the current avatar
+            // Sincroniza Mãos Customizadas
             await loadMyHandImages(myAvatarUrl);
-        } else {
-            myAvatarUrl = 'images/player_default.png';
-            await db.from('user_profiles').update({ avatar_url: myAvatarUrl }).eq('id', currentUser.id);
-            elP1Avatar.src = myAvatarUrl;
-            elProfilePreview.src = myAvatarUrl;
         }
 
-        // Popular modal de perfil com os dados reais
-        elProfileUser.value = myUsername.replace('@', '');
-        elProfileUser.placeholder = myUsername.replace('@', '');
-        elProfileEmail.value = currentUser.email; 
+        // Popular modal de perfil
+        if (elProfileUser) elProfileUser.value = myUsername.replace('@', '');
+        if (elProfileEmail) elProfileEmail.value = currentUser.email; 
         
-        // --- Atualiza visualização do Auth Modal para estado logado ---
+        // UI Auth Modal
         if (elAuthTabsGroup) elAuthTabsGroup.classList.add('hidden');
         if (elAuthFormContainer) elAuthFormContainer.classList.add('hidden');
         if (elAuthLoggedInContainer) elAuthLoggedInContainer.classList.remove('hidden');
         if (elAuthPText) elAuthPText.textContent = `Logado como ${currentUser.email}`;
 
-        // Ativar Realtime Listener para o Ledger/Wallet Híbrido da Economia JK$
+        // Realtime Balance Sync
         if (window.walletChannel) window.walletChannel.unsubscribe();
         window.walletChannel = db.channel('joken_economy_sync')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_profiles', filter: `id=eq.${currentUser.id}` }, payload => {
@@ -257,30 +249,44 @@ async function handleAuthTransition(session) {
             }).subscribe();
 
     } else {
-        // Estado Deslogado - Hard Reset local sem recarregar se possível, mas garantindo limpeza
+        // MODO CONVIDADO (GUEST) - Limpeza e Fallback
         sanitizeStateOnLogout();
-        
         currentUser = null;
-        myUsername = '@Player1'; 
+        myUsername = '@Convidado'; 
         myAvatarUrl = 'images/player_default.png';
         
         if (elP1Label) elP1Label.textContent = myUsername;
         if (elP1Avatar) elP1Avatar.src = myAvatarUrl;
         if (elProfilePreview) elProfilePreview.src = myAvatarUrl;
+
+        // Resetar mãos para padrão
+        myHandImages = { left: { rock: null, paper: null, scissors: null }, right: { rock: null, paper: null, scissors: null } };
         
-        // --- Atualiza visualização do Auth Modal para estado deslogado ---
+        // Tentar carregar saldo offline do device-id se houver
+        const { data: guestProfile } = await db.from('user_profiles').select('balance').eq('wallet_address', currentWallet).single();
+        if (guestProfile) {
+            updateBalance(guestProfile.balance);
+        } else {
+            updateBalance(1000.00);
+        }
+
+        // UI Auth Modal
         if (elAuthTabsGroup) elAuthTabsGroup.classList.remove('hidden');
         if (elAuthFormContainer) elAuthFormContainer.classList.remove('hidden');
         if (elAuthLoggedInContainer) elAuthLoggedInContainer.classList.add('hidden');
         if (elAuthUpdatePasswordContainer) elAuthUpdatePasswordContainer.classList.add('hidden');
         if (elAuthPText) elAuthPText.textContent = 'Acesse sua conta para entrar na Arena';
 
-        // Atualiza UI para Deslogado (Azul)
-        elLoginTrigger.textContent = '👤 Login';
-        elLoginTrigger.style.color = '#4285F4';
-        elLoginTrigger.title = 'Fazer Login';
-
+        if (elLoginTrigger) {
+            elLoginTrigger.textContent = '👤 Login';
+            elLoginTrigger.style.color = '#4285F4';
+        }
         if (elBtnAdmin) elBtnAdmin.classList.add('hidden');
+
+        // Se o usuário deslogou e estava em PvP, forçar volta ao Bot
+        if (gameMode === 'pvp') {
+            setMode('bot');
+        }
     }
 }
 
@@ -666,19 +672,15 @@ async function init() {
         document.body.addEventListener(evt, unlockAudio, { once: true });
     });
 
-    // Initial Auth Check
-    await checkUser();
-
-    // Listen for Auth changes
+    // Initial Auth listener - Única fonte de verdade para estado do usuário
     db.auth.onAuthStateChange(async (event, session) => {
         console.log("Auth Event:", event);
         
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
             await handleAuthTransition(session);
         } else if (event === 'SIGNED_OUT') {
             await handleAuthTransition(null);
         } else if (event === 'PASSWORD_RECOVERY') {
-            // Mostrar formulário de nova senha
             showView('auth-view');
             if (elAuthFormContainer) elAuthFormContainer.classList.add('hidden');
             if (elAuthTabsGroup) elAuthTabsGroup.classList.add('hidden');
@@ -686,19 +688,36 @@ async function init() {
         }
     });
 
-    // Event Delegation for Forgot Password & Update Password
-    const elBtnForgot = document.getElementById('btn-forgot-password');
-    if (elBtnForgot) {
-        elBtnForgot.onclick = async () => {
-            const email = elEmailInput.value.trim();
-            if (!email) return alert("Digite seu e-mail primeiro");
-            
-            const { error } = await db.auth.resetPasswordForEmail(email, {
-                redirectTo: window.location.origin
-            });
-            if (error) alert("Erro: " + error.message);
-            else alert("Link de recuperação enviado para " + email);
+    // Bootstrapping: Forçar verificação inicial caso o listener demore ou falhe em INITIAL_SESSION
+    const { data: { session } } = await db.auth.getSession();
+    if (session) await handleAuthTransition(session);
+    else await handleAuthTransition(null);
+
+    // Event Delegation for Guest Mode & Update Password
+    const elBtnGuest = document.getElementById('btn-guest-mode');
+    if (elBtnGuest) {
+        elGuestBtnStyle(elBtnGuest); // Estilização via JS para garantir visual premium
+        elBtnGuest.onclick = () => {
+            playSfx(elSfxClick);
+            setMode('bot');
+            showView('game-screen');
         };
+    }
+
+    function elGuestBtnStyle(btn) {
+        btn.style.marginTop = '15px';
+        btn.style.padding = '12px';
+        btn.style.borderRadius = '16px';
+        btn.style.background = '#f0f7ff';
+        btn.style.border = '1.5px dashed #4285F4';
+        btn.style.color = '#4285F4';
+        btn.style.fontWeight = '700';
+        btn.style.cursor = 'pointer';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.style.gap = '8px';
+        btn.innerHTML = '🤖 JOGAR VS BOT (TREINO)';
     }
 
     const elBtnUpdateSubmit = document.getElementById('btn-update-password-submit');
@@ -719,26 +738,7 @@ async function init() {
         };
     }
 
-    // Fallback/Guest Profile Logic
-    if (!currentUser) {
-        const { data } = await db.from('user_profiles').select('balance, username, avatar_url').eq('wallet_address', currentWallet).single();
-        
-        // FORÇAR PADRÃO PARA GUESTS (NÃO LOGADOS)
-        myUsername = '@Player1';
-        myAvatarUrl = 'images/player_default.png';
-        
-        if (data) {
-            updateBalance(data.balance);
-            // Ignoramos nome/avatar salvos no guest profile para manter o estado "bloqueado"
-        } else {
-            const initial = 1000.00;
-            await db.from('user_profiles').upsert([{ wallet_address: currentWallet, balance: initial }], { onConflict: 'wallet_address' });
-            updateBalance(initial);
-        }
 
-        if (elP1Label) elP1Label.textContent = myUsername;
-        if (elP1Avatar) elP1Avatar.src = myAvatarUrl;
-    }
     
     // EXTREMELY CRITICAL: Show the arena by default!
     hideAllViews();
@@ -918,11 +918,11 @@ function triggerFloatingPayout(amount, type) {
 async function setMode(mode) {
     playSfx(elSfxClick);
 
-    // Requisito: Apenas usuários logados podem acessar modo ONLINE
+    // REQUISITO CRÍTICO: Bloqueio permanente de PvP para não logados
     if (mode === 'pvp' && !currentUser) {
-        alert("Acesse sua conta para jogar o modo ONLINE!");
+        alert("🔒 ARENA ONLINE BLOQUEADA!\n\nAcesse sua conta para desafiar outros jogadores e salvar suas vitórias.");
         showView('auth-view');
-        // Mantém a seleção visual no botão BOT e não altera o gameMode
+        // Força o reset visual da seleção de modo para 'bot'
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.mode === 'bot');
         });
@@ -1196,9 +1196,16 @@ function reveal() {
     phase = 'BATTLE'; updatePhaseText();
     overlay.classList.remove('hidden');
     
-    // Imagem base de balanço (Pedra)
-    const p1Rock = myHandImages.rock || moveUris.rock;
-    const p2Rock = (gameMode === 'pvp' ? (opponent.hands?.rock || moveUris.rock) : moveUris.rock);
+    // Imagens de "Balancê" (Rock vs Rock animando)
+    const p1Rock = (myHandImages.left?.rock || moveUris.rock);
+    
+    // P2 (Direita): Se for PvP usa mãos do oponente, se for Bot usa 'right' do MEU próprio avatar (para manter o tema) ou fallback
+    let p2Rock;
+    if (gameMode === 'pvp') {
+        p2Rock = (opponent.hands?.right?.rock || moveUris.rock);
+    } else {
+        p2Rock = (myHandImages.right?.rock || moveUris.rock);
+    }
 
     h1.innerHTML = `<img src="${p1Rock}" class="anim-emoji-img">`; 
     h2.innerHTML = `<img src="${p2Rock}" class="anim-emoji-img">`;
@@ -1212,15 +1219,20 @@ function reveal() {
     setTimeout(() => {
         h1.style.animation = 'none'; h2.style.animation = 'none';
         
-        // Revelação final
+        // Revelação final das escolhas
         let p1Final = moveUris.unknown;
         if (myMove) {
-            p1Final = myHandImages[myMove] || moveUris[myMove];
+            p1Final = (myHandImages.left?.[myMove] || moveUris[myMove]);
         }
         
         let p2Final = moveUris.unknown;
         if (botMove) {
-            p2Final = (gameMode === 'pvp' ? (opponent.hands?.[botMove] || moveUris[botMove]) : moveUris[botMove]);
+            if (gameMode === 'pvp') {
+                p2Final = (opponent.hands?.right?.[botMove] || moveUris[botMove]);
+            } else {
+                // Bot contra o computador: usa a mão direita do avatar atual para espelhar
+                p2Final = (myHandImages.right?.[botMove] || moveUris[botMove]);
+            }
         }
 
         h1.innerHTML = `<img src="${p1Final}" class="anim-emoji-img">`;
@@ -1751,15 +1763,26 @@ async function purchaseAvatar(av) {
 }
 
 async function loadMyHandImages(avatarUrl) {
-    const { data, error } = await db.from('store_avatars').select('hand_rock_left, hand_paper_left, hand_scissors_left').eq('image_url', avatarUrl).single();
+    const { data, error } = await db.from('store_avatars')
+        .select('hand_rock_left, hand_paper_left, hand_scissors_left, hand_rock_right, hand_paper_right, hand_scissors_right')
+        .eq('image_url', avatarUrl)
+        .single();
+        
     if (data && !error) {
         myHandImages = {
-            rock: data.hand_rock_left,
-            paper: data.hand_paper_left,
-            scissors: data.hand_scissors_left
+            left: {
+                rock: data.hand_rock_left,
+                paper: data.hand_paper_left,
+                scissors: data.hand_scissors_left
+            },
+            right: {
+                rock: data.hand_rock_right,
+                paper: data.hand_paper_right,
+                scissors: data.hand_scissors_right
+            }
         };
     } else {
-        myHandImages = { rock: null, paper: null, scissors: null };
+        myHandImages = { left: { rock: null, paper: null, scissors: null }, right: { rock: null, paper: null, scissors: null } };
     }
 }
 

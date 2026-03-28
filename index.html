@@ -161,7 +161,7 @@
     
 
                     <p id="auth-error-msg" class="error-msg hidden" style="margin-top: 15px;"></p>
-                    <button id="btn-forgot-password" class="link-btn" style="margin-top: 10px; background: none; border: none; color: #4285F4; text-decoration: underline; cursor: pointer; font-size: 0.9rem;">Esqueci minha senha</button>
+                    <button id="btn-guest-mode" class="link-btn" style="margin-top: 15px;">🤖 BONECO VS BONECO (BOT)</button>
                     <div style="margin: 20px 0; text-align: center; color: #999;">OU</div>
                     <button id="btn-auth-google" class="google-btn"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span></button>
                     <button id="btn-auth-close" class="secondary-btn" style="width: 100%; margin-top: 15px; border-radius: 12px; background: #f8f9fa; color: #666; font-weight: 500;">Voltar ao Jogo</button>
@@ -335,39 +335,6 @@
     </div>
     
     <script src="app.js?v=2.9"></script>
-    <script>
-    // Ativador de Recuperação Antigravity
-
-    document.addEventListener('click', async (e) => {
-        
-    if (e.target && e.target.id === 'btn-forgot-password') {
-        // Busca o email no input correto
-        const email = document.getElementById('auth-email')?.value;
-        
-        if (!email) {
-            alert("Por favor, digite seu e-mail no campo acima primeiro.");
-            return;
-        }
-
-        const btn = e.target;
-        btn.innerText = "Enviando...";
-        btn.disabled = true;
-
-        const { error } = await db.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin
-        });
-
-        if (error) {
-            alert("Erro: " + error.message);
-        } else {
-            alert("Link enviado! Verifique seu e-mail.");
-        }
-        
-        btn.innerText = "Esqueci minha senha";
-        btn.disabled = false;
-    }
-});
-</script>
 </body>
 
 </html>
