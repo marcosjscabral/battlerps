@@ -904,23 +904,22 @@ function triggerFloatingPayout(amount, type) {
 
 async function setMode(mode) {
     playSfx(elSfxClick);
+
+    // Requisito: Apenas usuários logados podem acessar modo ONLINE
+    if (mode === 'pvp' && !currentUser) {
+        alert("Acesse sua conta para jogar o modo ONLINE!");
+        showView('auth-view');
+        // Mantém a seleção visual no botão BOT e não altera o gameMode
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === 'bot');
+        });
+        return;
+    }
+
     gameMode = mode;
     document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+    
     if (mode === 'pvp') {
-        /* 
-        if (!currentUser) {
-             // Redirecionar para login ou mostrar modal de auth (requisito 3 de entrega)
-             alert("Acesse sua conta para jogar PVP Online!");
-             document.getElementById('auth-overlay').classList.remove('hidden');
-             return;
-        }
-        */
-        /*
-        if (!myUsername) {
-            elUsernameOverlay.classList.remove('hidden');
-            return;
-        }
-        */
         // Zerar placar ao iniciar modo PvP
         scoreWins = 0; scoreDraws = 0; scoreLosses = 0;
         elScoreWin.textContent = 0; elScoreDraw.textContent = 0; elScoreLoss.textContent = 0;
