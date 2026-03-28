@@ -280,8 +280,20 @@
                         <input type="text" id="admin-avatar-name" placeholder="Ex: Guerreiro Sombrio" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
                         <label class="admin-label">Imagem do Avatar</label>
                         <input type="file" id="admin-avatar-image" accept="image/*">
-                        <label class="admin-label">Preço (JK$)</label>
-                        <input type="number" id="admin-avatar-price" placeholder="Preço (0 para grátis)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;" value="0">
+                        <div class="admin-hands-grid">
+                            <div class="hand-upload-group">
+                                <label class="admin-label">Mãos Lado Esquerdo (P1)</label>
+                                <input type="file" id="admin-avatar-rock-left" accept="image/*" class="admin-file-mini">
+                                <input type="file" id="admin-avatar-paper-left" accept="image/*" class="admin-file-mini">
+                                <input type="file" id="admin-avatar-scissors-left" accept="image/*" class="admin-file-mini">
+                            </div>
+                            <div class="hand-upload-group">
+                                <label class="admin-label">Mãos Lado Direito (P2)</label>
+                                <input type="file" id="admin-avatar-rock-right" accept="image/*" class="admin-file-mini">
+                                <input type="file" id="admin-avatar-paper-right" accept="image/*" class="admin-file-mini">
+                                <input type="file" id="admin-avatar-scissors-right" accept="image/*" class="admin-file-mini">
+                            </div>
+                        </div>
                         <button id="btn-save-new-avatar" class="battle-btn" style="margin-top:10px;">SALVAR</button>
                     </div>
                     <div class="admin-label" style="margin-top:20px; margin-bottom:10px;">Avatares Cadastrados</div>

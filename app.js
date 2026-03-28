@@ -154,6 +154,10 @@ function formatJK(val) {
 let balance = 0;
 let myMove = null;
 let botMove = null;
+let pvpState = 'searching'; // 'searching' | 'playing'
+let pvpTimer = 0;
+let pvpSearchId = null;
+let opponent = { id: null, username: 'Opponent', avatar: 'images/warrior_bot.png', move: null, wallet: 0, hands: { rock: null, paper: null, scissors: null } };
 let phase = 'COMMIT';
 let gameMode = 'bot';
 let pvpChannel = null;
@@ -168,6 +172,8 @@ let myUsername = localStorage.getItem('battlerps-user-handle');
 let currentUser = null;
 let pvpDiscoveryInterval = null;
 let myAvatarUrl = 'https://fjjkqwmuycnuzalaeszs.supabase.co/storage/v1/object/public/avatars/avatar_p1.png';
+let myUnlockedAvatars = [];
+let myHandImages = { rock: null, paper: null, scissors: null };
 let pvpSearchReadyAt = 0; // Timestamp mínimo para aceitar novo parceiro
 
 async function checkUser() {
@@ -216,6 +222,13 @@ async function handleAuthTransition(session) {
             myAvatarUrl = activeProfile.avatar_url;
             elP1Avatar.src = myAvatarUrl;
             elProfilePreview.src = myAvatarUrl;
+            
+            // Sync with game UI
+            elP1Label.innerText = '@' + myUsername;
+            updateBalanceUI();
+
+            // Load hand images for the current avatar
+            await loadMyHandImages(myAvatarUrl);
         } else {
             myAvatarUrl = 'images/player_default.png';
             await db.from('user_profiles').update({ avatar_url: myAvatarUrl }).eq('id', currentUser.id);
@@ -1021,6 +1034,10 @@ function startPvPDiscovery() {
                 elP2Avatar.closest('.avatar-box').classList.remove('searching');
                 if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
+                
+                // Mãos do oponente
+                opponent.hands = payload.hands || { rock: null, paper: null, scissors: null };
+
                 if (payload.balance !== undefined) {
                     elPvpWalletP2.textContent = formatJK(payload.balance);
                     elPvpWalletP2.style.opacity = '1';
@@ -1031,7 +1048,15 @@ function startPvPDiscovery() {
                 pvpChannel.send({ 
                     type: 'broadcast', 
                     event: 'ack', 
-                    payload: { to: partnerId, from: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance, isUser: !!currentUser } 
+                    payload: { 
+                        to: partnerId, 
+                        from: currentWallet, 
+                        username: myUsername, 
+                        avatar: myAvatarUrl, 
+                        balance: balance, 
+                        isUser: !!currentUser,
+                        hands: myHandImages 
+                    } 
                 });
                 
                 if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
@@ -1047,6 +1072,9 @@ function startPvPDiscovery() {
                 elP2Avatar.closest('.avatar-box').classList.remove('searching');
                 if (payload.avatar) elP2Avatar.src = payload.avatar;
                 elPvpText.textContent = dic['opponent-found'];
+                
+                // Mãos do oponente
+                opponent.hands = payload.hands || { rock: null, paper: null, scissors: null };
                 if (payload.balance !== undefined) {
                     elPvpWalletP2.textContent = formatJK(payload.balance);
                     elPvpWalletP2.style.opacity = '1';
@@ -1099,7 +1127,14 @@ function startPvPDiscovery() {
                        pvpChannel.send({ 
                            type: 'broadcast', 
                            event: 'discovery', 
-                           payload: { wallet: currentWallet, username: myUsername, avatar: myAvatarUrl, balance: balance, isUser: !!currentUser } 
+                           payload: { 
+                               wallet: currentWallet, 
+                               username: myUsername, 
+                               avatar: myAvatarUrl, 
+                               balance: balance, 
+                               isUser: !!currentUser,
+                               hands: myHandImages 
+                           } 
                        });
                    } else {
                        if (pvpDiscoveryInterval) clearInterval(pvpDiscoveryInterval);
@@ -1160,16 +1195,37 @@ function selectMove(move, btn) {
 function reveal() {
     phase = 'BATTLE'; updatePhaseText();
     overlay.classList.remove('hidden');
-    h1.innerHTML = `<img src="${moveUris.rock}" class="anim-emoji-img">`; h2.innerHTML = `<img src="${moveUris.rock}" class="anim-emoji-img">`;
+    
+    // Imagem base de balanço (Pedra)
+    const p1Rock = myHandImages.rock || moveUris.rock;
+    const p2Rock = (gameMode === 'pvp' ? (opponent.hands?.rock || moveUris.rock) : moveUris.rock);
+
+    h1.innerHTML = `<img src="${p1Rock}" class="anim-emoji-img">`; 
+    h2.innerHTML = `<img src="${p2Rock}" class="anim-emoji-img">`;
+    
     h1.style.animation = 'hand-bounce-p1 0.4s ease-in-out infinite';
     h2.style.animation = 'hand-bounce-p2 0.4s ease-in-out infinite';
     playSfx(elSfxBounce);
     setTimeout(() => playSfx(elSfxBounce), 400);
     setTimeout(() => playSfx(elSfxBounce), 800);
+    
     setTimeout(() => {
         h1.style.animation = 'none'; h2.style.animation = 'none';
-        h1.innerHTML = myMove ? `<img src="${moveUris[myMove]}" class="anim-emoji-img">` : `<img src="${moveUris.unknown}" class="anim-emoji-img">`;
-        h2.innerHTML = botMove ? `<img src="${moveUris[botMove]}" class="anim-emoji-img">` : `<img src="${moveUris.unknown}" class="anim-emoji-img">`;
+        
+        // Revelação final
+        let p1Final = moveUris.unknown;
+        if (myMove) {
+            p1Final = myHandImages[myMove] || moveUris[myMove];
+        }
+        
+        let p2Final = moveUris.unknown;
+        if (botMove) {
+            p2Final = (gameMode === 'pvp' ? (opponent.hands?.[botMove] || moveUris[botMove]) : moveUris[botMove]);
+        }
+
+        h1.innerHTML = `<img src="${p1Final}" class="anim-emoji-img">`;
+        h2.innerHTML = `<img src="${p2Final}" class="anim-emoji-img">`;
+        
         playSfx(elSfxReveal);
         setTimeout(() => { overlay.classList.add('hidden'); processPayout(); }, 1500);
     }, 1200);
@@ -1582,7 +1638,6 @@ async function buyCard(cardId) {
 }
 
 // ===== AVATAR STORE FUNCTIONS =====
-let myUnlockedAvatars = [];
 let currentStoreTab = 'buy'; // 'buy' or 'owned'
 
 async function switchStoreTab(tab) {
@@ -1695,6 +1750,19 @@ async function purchaseAvatar(av) {
     alert(`Parabéns! "${av.name}" agora é seu.`);
 }
 
+async function loadMyHandImages(avatarUrl) {
+    const { data, error } = await db.from('store_avatars').select('hand_rock_left, hand_paper_left, hand_scissors_left').eq('image_url', avatarUrl).single();
+    if (data && !error) {
+        myHandImages = {
+            rock: data.hand_rock_left,
+            paper: data.hand_paper_left,
+            scissors: data.hand_scissors_left
+        };
+    } else {
+        myHandImages = { rock: null, paper: null, scissors: null };
+    }
+}
+
 async function selectAvatar(url, cardEl, avId) {
     if (!currentUser) { alert('Faça login para trocar seu avatar!'); return; }
     
@@ -1717,6 +1785,9 @@ async function selectAvatar(url, cardEl, avId) {
     if (elP1Avatar) elP1Avatar.src = url;
     if (elProfilePreview) elProfilePreview.src = url;
 
+    // Carrega as mãos do novo avatar
+    await loadMyHandImages(url);
+
     // Redireciona para o jogo
     showView('game-screen');
 
@@ -1737,6 +1808,15 @@ async function saveNewAvatar() {
     const nameInput = document.getElementById('admin-avatar-name');
     const priceInput = document.getElementById('admin-avatar-price');
     const fileInput = document.getElementById('admin-avatar-image');
+    
+    // Novas mãos
+    const fRL = document.getElementById('admin-avatar-rock-left').files[0];
+    const fPL = document.getElementById('admin-avatar-paper-left').files[0];
+    const fSL = document.getElementById('admin-avatar-scissors-left').files[0];
+    const fRR = document.getElementById('admin-avatar-rock-right').files[0];
+    const fPR = document.getElementById('admin-avatar-paper-right').files[0];
+    const fSR = document.getElementById('admin-avatar-scissors-right').files[0];
+
     const btn = document.getElementById('btn-save-new-avatar');
     
     const name = nameInput.value.trim();
@@ -1749,6 +1829,16 @@ async function saveNewAvatar() {
     btn.disabled = true;
     btn.textContent = 'Processando...';
 
+    async function uploadHand(file, suffix) {
+        if (!file) return null;
+        const ext = file.name.split('.').pop();
+        const fileName = `hand_${Date.now()}_${suffix}.${ext}`;
+        const { error: uploadErr } = await db.storage.from('avatars').upload(fileName, file);
+        if (uploadErr) throw uploadErr;
+        const { data: { publicUrl } } = db.storage.from('avatars').getPublicUrl(fileName);
+        return publicUrl;
+    }
+
     try {
         let imageUrl = null;
         if (file) {
@@ -1760,16 +1850,26 @@ async function saveNewAvatar() {
             imageUrl = publicUrl;
         }
 
+        // Upload todas as mãos em paralelo
+        const hands = await Promise.all([
+            uploadHand(fRL, 'rock_l'), uploadHand(fPL, 'paper_l'), uploadHand(fSL, 'scissors_l'),
+            uploadHand(fRR, 'rock_r'), uploadHand(fPR, 'paper_r'), uploadHand(fSR, 'scissors_r')
+        ]);
+
+        const dbData = { name, price };
+        if (imageUrl) dbData.image_url = imageUrl;
+        if (hands[0]) dbData.hand_rock_left = hands[0];
+        if (hands[1]) dbData.hand_paper_left = hands[1];
+        if (hands[2]) dbData.hand_scissors_left = hands[2];
+        if (hands[3]) dbData.hand_rock_right = hands[3];
+        if (hands[4]) dbData.hand_paper_right = hands[4];
+        if (hands[5]) dbData.hand_scissors_right = hands[5];
+
         if (editingAvatarId) {
-            // UPDATING existing
-            const updateData = { name, price };
-            if (imageUrl) updateData.image_url = imageUrl;
-            
-            const { error: dbErr } = await db.from('store_avatars').update(updateData).eq('id', editingAvatarId);
+            const { error: dbErr } = await db.from('store_avatars').update(dbData).eq('id', editingAvatarId);
             if (dbErr) throw dbErr;
         } else {
-            // INSERTING new
-            const { error: dbErr } = await db.from('store_avatars').insert({ name, image_url: imageUrl, price });
+            const { error: dbErr } = await db.from('store_avatars').insert(dbData);
             if (dbErr) throw dbErr;
         }
 
@@ -1777,6 +1877,10 @@ async function saveNewAvatar() {
         nameInput.value = '';
         priceInput.value = '0';
         fileInput.value = '';
+        ['rock-left', 'paper-left', 'scissors-left', 'rock-right', 'paper-right', 'scissors-right'].forEach(id => {
+            document.getElementById('admin-avatar-' + id).value = '';
+        });
+
         btn.textContent = '✅ Sucesso!';
         setTimeout(() => { btn.textContent = 'SALVAR'; btn.disabled = false; }, 1500);
         loadAdminAvatars();
