@@ -266,11 +266,14 @@
                 <!-- Aba: Wallet Cards -->
                 <div id="admin-panel-wallet" class="admin-panel">
                     <div class="admin-form-card">
-                        <input type="file" id="admin-card-image" accept="image/*">
-                        <input type="number" id="admin-card-amount" placeholder="Quantidade JK">
-                        <input type="number" id="admin-card-price" placeholder="Preço Real">
+                        <label class="admin-label">Imagem do Card</label>
+                        <input type="file" id="admin-card-image" accept="image/*" style="margin-bottom:10px;">
+                        <input type="number" id="admin-card-amount" placeholder="Quantidade JK (ex: 5000)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
+                        <input type="number" id="admin-card-price" placeholder="Preço Real (ex: 10.99)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
                         <button id="btn-save-new-card" class="battle-btn">CRIAR CARD</button>
                     </div>
+                    <div class="admin-label" style="margin-top:20px; margin-bottom:10px;">Cards Existentes</div>
+                    <div id="admin-card-list" class="avatar-admin-list"></div>
                 </div>
 
                 <!-- Aba: Avatares -->
@@ -279,7 +282,9 @@
                         <label class="admin-label">Nome do Avatar</label>
                         <input type="text" id="admin-avatar-name" placeholder="Ex: Guerreiro Sombrio" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
                         <label class="admin-label">Imagem do Avatar</label>
-                        <input type="file" id="admin-avatar-image" accept="image/*">
+                        <input type="file" id="admin-avatar-image" accept="image/*" style="margin-bottom:10px;">
+                        <label class="admin-label">Valor do Avatar (JK$)</label>
+                        <input type="number" id="admin-avatar-price" placeholder="Preço em JK$ (ex: 2500)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
                         <div class="admin-hands-grid">
                             <div class="hand-upload-group">
                                 <label class="admin-label">Mãos Lado Esquerdo (P1)</label>

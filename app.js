@@ -678,6 +678,10 @@ async function init() {
         
         if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
             await handleAuthTransition(session);
+            // Requisito 1: Fechar popup ao realizar login/reconhecimento
+            if (event === 'SIGNED_IN') {
+                showView('game-screen');
+            }
         } else if (event === 'SIGNED_OUT') {
             await handleAuthTransition(null);
         } else if (event === 'PASSWORD_RECOVERY') {
@@ -1548,6 +1552,7 @@ window.switchAdminTab = function(tab) {
     document.getElementById('admin-tab-wallet').classList.toggle('active', tab === 'wallet');
     document.getElementById('admin-tab-avatars').classList.toggle('active', tab === 'avatars');
     if (tab === 'avatars') loadAdminAvatars();
+    if (tab === 'wallet') loadAdminCards();
 };
 
 
@@ -1590,11 +1595,54 @@ async function saveNewCard() {
 
         msg.style.color = 'green';
         msg.textContent = "✨ Sucesso! Card criado.";
-        setTimeout(() => { hideAdmin(); loadShop(); }, 1500);
+        
+        // Reset form
+        document.getElementById('admin-card-image').value = '';
+        document.getElementById('admin-card-amount').value = '';
+        document.getElementById('admin-card-price').value = '';
+        
+        loadAdminCards();
+        setTimeout(() => { msg.textContent = ""; }, 3000);
     } catch (err) {
         msg.style.color = 'red';
         msg.textContent = "ERRO: " + err.message;
     }
+}
+
+async function loadAdminCards() {
+    const list = document.getElementById('admin-card-list');
+    if (!list) return;
+    list.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Carregando cards...</p>';
+
+    const { data, error } = await db.from('shop_cards').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) {
+        list.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Nenhum card cadastrado ainda.</p>';
+        return;
+    }
+
+    list.innerHTML = '';
+    data.forEach(card => {
+        const item = document.createElement('div');
+        item.className = 'avatar-admin-item';
+        item.innerHTML = `
+            <img src="${card.image_url}" alt="Card" style="border-radius:8px;">
+            <div class="avatar-admin-info">
+                <strong>JK$ ${card.jokens_amount}</strong>
+                <span>R$ ${card.price_brl}</span>
+            </div>
+            <div class="admin-actions">
+                <button class="admin-action-btn admin-del-btn" onclick="deleteCard('${card.id}')" title="Excluir">❌</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+async function deleteCard(id) {
+    if(!confirm("Deseja excluir este card?")) return;
+    const { error } = await db.from('shop_cards').delete().eq('id', id);
+    if(error) alert("Erro: " + error.message);
+    else loadAdminCards();
 }
 
 async function loadShop() {
@@ -1898,7 +1946,7 @@ async function saveNewAvatar() {
 
         editingAvatarId = null;
         nameInput.value = '';
-        priceInput.value = '0';
+        priceInput.value = '';
         fileInput.value = '';
         ['rock-left', 'paper-left', 'scissors-left', 'rock-right', 'paper-right', 'scissors-right'].forEach(id => {
             document.getElementById('admin-avatar-' + id).value = '';
@@ -1953,7 +2001,11 @@ function editAvatar(id) {
     editingAvatarId = id;
     const nameStr = avNameElement.querySelector('strong').innerText;
     const infoStr = avNameElement.querySelector('span').innerText;
-    const priceVal = infoStr.split('JK$ ')[1].split(' | ')[0];
+    // Extract price from "JK$ 2500 | ✅ Ativo"
+    let priceVal = "0";
+    try {
+        priceVal = infoStr.split('JK$ ')[1].split(' | ')[0];
+    } catch(e) {}
 
     document.getElementById('admin-avatar-name').value = nameStr;
     document.getElementById('admin-avatar-price').value = priceVal;
@@ -1961,8 +2013,9 @@ function editAvatar(id) {
     const btn = document.getElementById('btn-save-new-avatar');
     btn.textContent = 'ATUALIZAR AVATAR';
     
-    // Smooth scroll to top of admin panel
-    document.querySelector('.admin-panel').scrollTo({ top: 0, behavior: 'smooth' });
+    // Smooth scroll to top of form
+    const container = document.getElementById('admin-view').querySelector('.shop-container');
+    container.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function deleteAvatar(id) {
