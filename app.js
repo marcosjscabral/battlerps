@@ -450,6 +450,9 @@ window.showView = function(viewId) {
     if (elProfileUser) { elProfileUser.readOnly = true; elProfileUser.classList.add('readonly-input'); elProfileUser.classList.remove('edit-active'); }
     if (elProfileEmail) { elProfileEmail.readOnly = true; elProfileEmail.classList.add('readonly-input'); elProfileEmail.classList.remove('edit-active'); }
 
+    // Fechar explicitamente o overlay de auth se mudar para qualquer outra view ou game-screen
+    if (viewId !== 'auth-view' && elAuthView) elAuthView.classList.add('hidden');
+
     // Hide all main switches
     Object.values(allViews).forEach(view => {
         if (view) view.classList.add('hidden');
@@ -557,6 +560,26 @@ function showConfirm(title, msg) {
         
         elConfirmYes.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(true); };
         elConfirmNo.onclick = () => { elConfirmOverlay.classList.add('hidden'); resolve(false); };
+    });
+}
+
+const elSuccessOverlay = document.getElementById('success-overlay');
+const elSuccessTitle = document.getElementById('success-title');
+const elSuccessMsg = document.getElementById('success-msg');
+const elBtnSuccessClose = document.getElementById('btn-success-close');
+
+function showSuccessPopup(title, msg) {
+    return new Promise((resolve) => {
+        if (elSuccessTitle) elSuccessTitle.textContent = title.toUpperCase();
+        if (elSuccessMsg) elSuccessMsg.textContent = msg;
+        if (elSuccessOverlay) elSuccessOverlay.classList.remove('hidden');
+        
+        if (elBtnSuccessClose) {
+            elBtnSuccessClose.onclick = () => {
+                elSuccessOverlay.classList.add('hidden');
+                resolve(true);
+            };
+        }
     });
 }
 
@@ -677,10 +700,16 @@ async function init() {
         console.log("Auth Event:", event);
         
         if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-            await handleAuthTransition(session);
-            // Requisito 1: Fechar popup ao realizar login/reconhecimento
-            if (event === 'SIGNED_IN') {
-                showView('game-screen');
+            try {
+                await handleAuthTransition(session);
+                // Requisito 1: Fechar popup ao realizar login/reconhecimento
+                if (event === 'SIGNED_IN') {
+                    showView('game-screen');
+                    // Força fechamento caso showView falhe por estar no mesmo view
+                    if (elAuthView) elAuthView.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error("Auth Transition Error:", err);
             }
         } else if (event === 'SIGNED_OUT') {
             await handleAuthTransition(null);
@@ -1593,8 +1622,7 @@ async function saveNewCard() {
 
         if (dbError) throw dbError;
 
-        msg.style.color = 'green';
-        msg.textContent = "✨ Sucesso! Card criado.";
+        showSuccessPopup("SUCESSO!", "Card foi criado");
         
         // Reset form
         document.getElementById('admin-card-image').value = '';
@@ -1952,8 +1980,10 @@ async function saveNewAvatar() {
             document.getElementById('admin-avatar-' + id).value = '';
         });
 
-        btn.textContent = '✅ Sucesso!';
-        setTimeout(() => { btn.textContent = 'SALVAR'; btn.disabled = false; }, 1500);
+        showSuccessPopup("SUCESSO!", editingAvatarId ? "Avatar atualizado!" : "Avatar criado com sucesso!");
+        
+        btn.textContent = 'SALVAR';
+        btn.disabled = false;
         loadAdminAvatars();
     } catch (err) {
         alert('Erro: ' + err.message);
