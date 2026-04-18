@@ -489,12 +489,36 @@ function switchAuthMode(mode) {
 }
 
 async function signInWithGoogle() {
-    await db.auth.signInWithOAuth({ 
-        provider: 'google',
-        options: {
-            redirectTo: window.location.origin
+    const btn = document.getElementById('btn-auth-google');
+    try {
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.innerHTML = '<span>Conectando...</span>'; }
+
+        // Monta redirectTo robusto: origin + pathname (sem hash/query)
+        const redirectUrl = window.location.origin + window.location.pathname;
+
+        const { data, error } = await db.auth.signInWithOAuth({ 
+            provider: 'google',
+            options: {
+                redirectTo: redirectUrl,
+                queryParams: {
+                    access_type: 'offline',
+                    prompt: 'select_account'
+                }
+            }
+        });
+
+        if (error) {
+            console.error('Google OAuth Error:', error);
+            alert('Erro ao conectar com Google: ' + error.message);
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span>'; }
         }
-    });
+        // Se não houve erro, o navegador será redirecionado para o Google automaticamente.
+        // O botão ficará desabilitado até o redirect acontecer.
+    } catch (err) {
+        console.error('Google Sign-In Exception:', err);
+        alert('Erro inesperado ao tentar login com Google.');
+        if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G"><span>Google</span>'; }
+    }
 }
 
 async function signInWithEmail() {
@@ -673,6 +697,13 @@ async function uploadAvatar(file) {
 }
 
 async function init() {
+    // Limpa fragmentos de hash do OAuth redirect (tokens na URL)
+    if (window.location.hash && window.location.hash.includes('access_token')) {
+        // Supabase client já capturou os tokens; limpa a URL para ficar limpa
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState(null, '', cleanUrl);
+    }
+
     applyLanguage(currentLang);
     updateScoreUI();
     elMusicSlider.value = currentVolumeMusic;
@@ -1496,10 +1527,14 @@ if (elLoginTrigger) elLoginTrigger.onclick = async () => {
     }
     else showView('auth-view');
 };
-if (elAuthGoogle) elAuthGoogle.onclick = signInWithGoogle;
+if (elAuthGoogle) elAuthGoogle.onclick = (e) => { e.preventDefault(); e.stopPropagation(); signInWithGoogle(); };
 if (elAuthEmailBtn) elAuthEmailBtn.onclick = signInWithEmail;
 if (elTabLogin) elTabLogin.onclick = () => switchAuthMode('login');
 if (elTabSignup) elTabSignup.onclick = () => switchAuthMode('signup');
+
+// Botão "Voltar ao Jogo" dentro do auth modal
+const elBtnAuthClose = document.getElementById('btn-auth-close');
+if (elBtnAuthClose) elBtnAuthClose.onclick = () => showView('game-screen');
 
 if (elProfileTrigger) elProfileTrigger.onclick = () => {
     if (elAudioMenu) elAudioMenu.classList.remove('active');
