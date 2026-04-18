@@ -1,7 +1,13 @@
 const SUPABASE_URL = 'https://fjjkqwmuycnuzalaeszs.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ox8ZqXVfzYWzjAmtz3KIMg_w3F7fas7';
 const { createClient } = window.supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true
+    }
+});
 
 const translations = {
     en: {
@@ -184,6 +190,7 @@ async function handleAuthTransition(session) {
         currentUser = session.user;
         console.log("User identifying as:", currentUser.email);
 
+        const elBtnAdmin = document.getElementById('btn-admin-trigger');
         if (elBtnAdmin) {
             if (currentUser.email === 'marcosjscabral@gmail.com') {
                 elBtnAdmin.classList.remove('hidden');
@@ -223,10 +230,10 @@ async function handleAuthTransition(session) {
             
             // Sync with game UI
             if (elP1Label) elP1Label.innerText = myUsername;
-            updateBalanceUI();
+            updateBalance(balance);
 
             // Sincroniza Mãos Customizadas
-            await loadMyHandImages(myAvatarUrl);
+            try { if (typeof loadMyHandImages === 'function') await loadMyHandImages(myAvatarUrl); } catch(e) { console.warn('Hand images not loaded:', e); }
         }
 
         // Popular modal de perfil
@@ -281,7 +288,8 @@ async function handleAuthTransition(session) {
             elLoginTrigger.textContent = '👤 Login';
             elLoginTrigger.style.color = '#4285F4';
         }
-        if (elBtnAdmin) elBtnAdmin.classList.add('hidden');
+        const elBtnAdminGuest = document.getElementById('btn-admin-trigger');
+        if (elBtnAdminGuest) elBtnAdminGuest.classList.add('hidden');
 
         // Se o usuário deslogou e estava em PvP, forçar volta ao Bot
         if (gameMode === 'pvp') {
@@ -697,12 +705,8 @@ async function uploadAvatar(file) {
 }
 
 async function init() {
-    // Limpa fragmentos de hash do OAuth redirect (tokens na URL)
-    if (window.location.hash && window.location.hash.includes('access_token')) {
-        // Supabase client já capturou os tokens; limpa a URL para ficar limpa
-        const cleanUrl = window.location.origin + window.location.pathname;
-        window.history.replaceState(null, '', cleanUrl);
-    }
+    // NÃO limpar URL aqui! Deixar o Supabase processar tokens/códigos primeiro.
+    // A limpeza será feita dentro de onAuthStateChange após confirmar a sessão.
 
     applyLanguage(currentLang);
     updateScoreUI();
@@ -728,19 +732,25 @@ async function init() {
 
     // Initial Auth listener - Única fonte de verdade para estado do usuário
     db.auth.onAuthStateChange(async (event, session) => {
-        console.log("Auth Event:", event);
+        console.log("Auth Event:", event, "Has Session:", !!(session && session.user));
         
         if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
             try {
                 await handleAuthTransition(session);
-                // Requisito 1: Fechar popup ao realizar login/reconhecimento
-                if (event === 'SIGNED_IN') {
+                // Para QUALQUER evento com sessão válida, garantir que o jogo é exibido
+                if (session && session.user) {
                     showView('game-screen');
-                    // Força fechamento caso showView falhe por estar no mesmo view
                     if (elAuthView) elAuthView.classList.add('hidden');
                 }
             } catch (err) {
                 console.error("Auth Transition Error:", err);
+            }
+            // Limpar URL de tokens/códigos OAuth DEPOIS de processar a sessão
+            if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error'))) {
+                window.history.replaceState(null, '', window.location.origin + window.location.pathname);
+            }
+            if (window.location.search && (window.location.search.includes('code=') || window.location.search.includes('error='))) {
+                window.history.replaceState(null, '', window.location.origin + window.location.pathname);
             }
         } else if (event === 'SIGNED_OUT') {
             await handleAuthTransition(null);
@@ -751,11 +761,6 @@ async function init() {
             if (elAuthUpdatePasswordContainer) elAuthUpdatePasswordContainer.classList.remove('hidden');
         }
     });
-
-    // Bootstrapping: Forçar verificação inicial caso o listener demore ou falhe em INITIAL_SESSION
-    const { data: { session } } = await db.auth.getSession();
-    if (session) await handleAuthTransition(session);
-    else await handleAuthTransition(null);
 
     // Event Delegation for Guest Mode & Update Password
     const elBtnGuest = document.getElementById('btn-guest-mode');
