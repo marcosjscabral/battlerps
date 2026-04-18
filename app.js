@@ -150,11 +150,11 @@ const moveUris = {
     unknown: 'images/question.png'
 };
 
-// Economia Joken (JK$)
+// Economia Battle Shape (BS$)
 const JOKEN_RATE = 100; // Constante Global
 
-function formatJK(val) {
-    return 'JK$ ' + Math.floor(val).toLocaleString('pt-BR');
+function formatBS(val) {
+    return 'BS$ ' + Math.floor(val).toLocaleString('pt-BR');
 }
 
 let balance = 0;
@@ -930,8 +930,8 @@ function updatePhaseText() {
 
 function updateBalance(val) {
     balance = parseFloat(val) || 0;
-    if (elBalance) elBalance.textContent = formatJK(balance);
-    if (elShopBalance) elShopBalance.textContent = formatJK(balance);
+    if (elBalance) elBalance.textContent = formatBS(balance);
+    if (elShopBalance) elShopBalance.textContent = formatBS(balance);
     
     // Sync header chip colors
     const applyChipClass = (chip) => {
@@ -946,7 +946,7 @@ function updateBalance(val) {
 
     // Atualiza chip da carteira PvP (P1) com texto e cor
     if (elPvpWalletP1) {
-        elPvpWalletP1.textContent = formatJK(balance);
+        elPvpWalletP1.textContent = formatBS(balance);
         applyPvpWalletColor(elPvpWalletP1, balance, !!currentUser);
     }
 
@@ -977,7 +977,7 @@ function updateScoreUI() {
 function triggerFloatingPayout(amount, type) {
     const float = document.createElement('div');
     float.className = 'floating-payout';
-    float.textContent = (amount > 0 ? '+' : '-') + formatJK(Math.abs(amount));
+    float.textContent = (amount > 0 ? '+' : '-') + formatBS(Math.abs(amount));
     float.classList.add(type === 'win' ? 'text-win' : 'text-loss');
     float.style.left = '50%'; float.style.top = '45%';
     document.body.appendChild(float);
@@ -1048,7 +1048,7 @@ function resetToSearching() {
     elP1Status.style.color = 'var(--on-surface-variant)';
     elP2Status.textContent = dic['awaiting'];
     elP2Status.style.color = 'var(--on-surface-variant)';
-    elPvpWalletP2.textContent = 'JK$ --'; // Reset P2 chip
+    elPvpWalletP2.textContent = 'BS$ --'; // Reset P2 chip
     elPvpWalletP2.style.opacity = '0.4';
 
     // Define o momento mínimo em que poderemos aceitar um novo oponente (agora + 5s)
@@ -1083,9 +1083,9 @@ function startPvPDiscovery() {
     elP2Avatar.src = 'images/satellite.png';
     elP2Avatar.closest('.avatar-box').classList.add('searching');
     // Carteiras: mostra P1, oculta P2 até encontrar oponente
-    elPvpWalletP1.textContent = formatJK(balance);
+    elPvpWalletP1.textContent = formatBS(balance);
     applyPvpWalletColor(elPvpWalletP1, balance, !!currentUser);
-    elPvpWalletP2.textContent = 'JK$ --';
+    elPvpWalletP2.textContent = 'BS$ --';
     elPvpWalletP2.style.opacity = '0.4';
     elPvpWalletP2.classList.remove('pvp-wallet-positive', 'pvp-wallet-fictitious', 'pvp-wallet-empty');
     partnerId = null;
@@ -1108,7 +1108,7 @@ function startPvPDiscovery() {
                 opponent.hands = payload.hands || { rock: null, paper: null, scissors: null };
 
                 if (payload.balance !== undefined) {
-                    elPvpWalletP2.textContent = formatJK(payload.balance);
+                    elPvpWalletP2.textContent = formatBS(payload.balance);
                     elPvpWalletP2.style.opacity = '1';
                     applyPvpWalletColor(elPvpWalletP2, payload.balance, payload.isUser);
                 }
@@ -1145,7 +1145,7 @@ function startPvPDiscovery() {
                 // Mãos do oponente
                 opponent.hands = payload.hands || { rock: null, paper: null, scissors: null };
                 if (payload.balance !== undefined) {
-                    elPvpWalletP2.textContent = formatJK(payload.balance);
+                    elPvpWalletP2.textContent = formatBS(payload.balance);
                     elPvpWalletP2.style.opacity = '1';
                 }
                 
@@ -1182,7 +1182,7 @@ function startPvPDiscovery() {
         .on('broadcast', { event: 'balance-update' }, ({ payload }) => {
             // Atualiza carteira do oponente em tempo real
             if (payload.from === partnerId) {
-                elPvpWalletP2.textContent = formatJK(payload.balance);
+                elPvpWalletP2.textContent = formatBS(payload.balance);
                 elPvpWalletP2.style.opacity = '1';
                 applyPvpWalletColor(elPvpWalletP2, payload.balance, payload.isUser);
             }
@@ -1327,7 +1327,7 @@ function processPayout(forcedLoss = false, forcedWin = false) {
             else if (result.winner === 0) { newBalance -= 5; triggerFloatingPayout(-5, 'loss'); }
             
             setTimeout(async () => {
-                // Ledger: Sistema de rastreabilidade (Transações JK$)
+                // Ledger: Sistema de rastreabilidade (Transações BS$)
                 if (currentUser) {
                     if (result.winner === 1) {
                         await db.from('transactions').insert({ user_id: currentUser.id, amount: 10, type: 'game_win', description: 'Vitória no Joken PVP' });
@@ -1695,7 +1695,7 @@ async function loadAdminCards() {
         item.innerHTML = `
             <img src="${card.image_url}" alt="Card" style="border-radius:8px;">
             <div class="avatar-admin-info">
-                <strong>JK$ ${card.jokens_amount}</strong>
+                <strong>BS$ ${card.jokens_amount}</strong>
                 <span>R$ ${card.price_brl}</span>
             </div>
             <div class="admin-actions">
@@ -1735,7 +1735,7 @@ async function loadShop() {
             const cardEl = document.createElement('div');
             cardEl.className = 'shop-card';
             cardEl.style.backgroundImage = `url('${card.image_url}')`;
-            cardEl.title = `Comprar ${card.jokens_amount} JK$`;
+            cardEl.title = `Comprar ${card.jokens_amount} BS$`;
             cardEl.onclick = () => buyCard(card.id);
             elShopGrid.appendChild(cardEl);
         });
@@ -1747,7 +1747,7 @@ async function loadShop() {
 
 async function buyCard(cardId) {
     if (!currentUser) {
-        alert("Você precisa estar logado para comprar JK$!");
+        alert("Você precisa estar logado para comprar BS$!");
         return;
     }
     
@@ -1757,9 +1757,9 @@ async function buyCard(cardId) {
     if (error) {
         alert("Erro na transação: " + error.message);
     } else if (data.success) {
-        alert(`Sucesso! Você adquiriu ${data.amount} JK$.`);
+        alert(`Sucesso! Você adquiriu ${data.amount} BS$.`);
         // O Realtime já atualizará o saldo global, mas atualizamos o visor da loja também
-        if (elShopBalance) elShopBalance.textContent = formatJK(balance + data.amount);
+        if (elShopBalance) elShopBalance.textContent = formatBS(balance + data.amount);
     } else {
         alert("Erro: " + data.error);
     }
@@ -1817,7 +1817,7 @@ async function loadAvatarStore() {
         if (isUnlocked) {
             priceTag = av.price === 0 ? '<span class="avatar-price-tag free">GRÁTIS</span>' : '<span class="avatar-price-tag unlocked">ADQUIRIDO</span>';
         } else {
-            priceTag = `<span class="avatar-price-tag paid">JK$ ${av.price}</span>`;
+            priceTag = `<span class="avatar-price-tag paid">BS$ ${av.price}</span>`;
         }
 
         card.innerHTML = `
@@ -1848,9 +1848,9 @@ async function loadAvatarStore() {
 
 async function purchaseAvatar(av) {
     if (!currentUser) return;
-    if (balance < av.price) { alert(`Saldo insuficiente! Você precisa de JK$ ${av.price}.`); return; }
+    if (balance < av.price) { alert(`Saldo insuficiente! Você precisa de BS$ ${av.price}.`); return; }
 
-    const ok = await showConfirm('ADQUIRIR AVATAR', `Deseja comprar "${av.name}" por JK$ ${av.price}?`);
+    const ok = await showConfirm('ADQUIRIR AVATAR', `Deseja comprar "${av.name}" por BS$ ${av.price}?`);
     if (!ok) return;
 
     // Process Purchase via Atomic RPC
@@ -1869,9 +1869,9 @@ async function purchaseAvatar(av) {
     // Update Local State based on server response
     balance = data.new_balance;
     myUnlockedAvatars = [...myUnlockedAvatars, av.id]; // we know it succeeded
-    if (elBalance) elBalance.textContent = formatJK(balance);
-    if (elBalanceChip) elBalanceChip.textContent = formatJK(balance);
-    if (elShopBalance) elShopBalance.textContent = formatJK(balance);
+    if (elBalance) elBalance.textContent = formatBS(balance);
+    if (elBalanceChip) elBalanceChip.textContent = formatBS(balance);
+    if (elShopBalance) elShopBalance.textContent = formatBS(balance);
 
     playSfx(elSfxWin); // reuse win sfx for happy purchase
     loadAvatarStore(); 
@@ -2051,7 +2051,7 @@ async function loadAdminAvatars() {
             <img src="${av.image_url}" alt="${av.name}">
             <div class="avatar-admin-info">
                 <strong>${av.name}</strong>
-                <span>JK$ ${av.price || 0} | ${av.is_active ? '✅ Ativo' : '🔴 Inativo'}</span>
+                <span>BS$ ${av.price || 0} | ${av.is_active ? '✅ Ativo' : '🔴 Inativo'}</span>
             </div>
             <div class="admin-actions">
                 <button class="admin-action-btn admin-edit-btn" onclick="editAvatar('${av.id}')" title="Editar">✏️</button>
@@ -2074,7 +2074,7 @@ function editAvatar(id) {
     // Extract price from "JK$ 2500 | ✅ Ativo"
     let priceVal = "0";
     try {
-        priceVal = infoStr.split('JK$ ')[1].split(' | ')[0];
+        priceVal = infoStr.split('BS$ ')[1].split(' | ')[0];
     } catch(e) {}
 
     document.getElementById('admin-avatar-name').value = nameStr;
