@@ -1759,17 +1759,36 @@ async function buyCard(cardId) {
         return;
     }
     
-    // Antigravity Way: Envia apenas ID, backend resolve preço e saldo.
-    const { data, error } = await db.rpc('buy_shop_card', { target_card_id: cardId });
-    
-    if (error) {
-        alert("Erro na transação: " + error.message);
-    } else if (data.success) {
-        alert(`Sucesso! Você adquiriu ${data.amount} BS$.`);
-        // O Realtime já atualizará o saldo global, mas atualizamos o visor da loja também
-        if (elShopBalance) elShopBalance.textContent = formatBS(balance + data.amount);
-    } else {
-        alert("Erro: " + data.error);
+    // ======== MODO TESTE (Bypass da RPC buy_shop_card para testes) ========
+    try {
+        const { data: cardData, error: cardErr } = await db.from('shop_cards').select('jokens_amount').eq('id', cardId).single();
+        if (cardErr) throw cardErr;
+
+        const { data: profileData, error: profileErr } = await db.from('user_profiles').select('wallet_balance').eq('id', currentUser.id).single();
+        if (profileErr) throw profileErr;
+        
+        const newBalance = (profileData.wallet_balance || 0) + cardData.jokens_amount;
+
+        // Atualiza a carteira diretamente (Simulando uma transação via servidor/Stripe)
+        const { error: updateErr } = await db.from('user_profiles').update({ wallet_balance: newBalance }).eq('id', currentUser.id);
+        if (updateErr) throw updateErr;
+
+        // Grava no histórico (se não tiver a coluna "user_id", mudará no futuro para a correta)
+        // Essa chamada usa .catch para não mostrar o erro na tela caso a tabela 'transactions' esteja mal configurada
+        db.from('transactions').insert({ user_id: currentUser.id, amount: cardData.jokens_amount, type: 'shop_purchase', description: 'Compra Modos Teste' })
+          .then(({error}) => { if (error) console.warn('Erro ao salvar histórico de compra:', error.message); });
+
+        alert(`Sucesso! Você adquiriu ${cardData.jokens_amount} BS$ (Modo de Teste Vercel). \n\nFuturamente isto passará pelo Stripe.`);
+        
+        // Atualiza a interface
+        if (elShopBalance) elShopBalance.textContent = formatBS(newBalance);
+        if (elBalance) elBalance.textContent = formatBS(newBalance);
+        
+        // Atualiza variável local do saldo pra evitar dessincronização rápida
+        balance = newBalance;
+
+    } catch (err) {
+        alert("Falha na simulação de compra: " + err.message);
     }
 }
 
