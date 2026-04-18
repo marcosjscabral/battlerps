@@ -270,7 +270,9 @@
                         <input type="file" id="admin-card-image" accept="image/*" style="margin-bottom:10px;">
                         <input type="number" id="admin-card-amount" placeholder="Quantidade BS (ex: 5000)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
                         <input type="number" id="admin-card-price" placeholder="Preço Real (ex: 10.99)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;">
+                        <input type="text" id="admin-card-stripe-id" placeholder="Stripe Price ID (Opcional)" style="padding:12px; border-radius:12px; border:1px solid #eee; width:100%; margin-bottom:10px;" title="Futura integração com Stripe">
                         <button id="btn-save-new-card" class="battle-btn">CRIAR CARD</button>
+                        <p id="admin-status-msg" style="margin-top: 10px; font-weight: bold;"></p>
                     </div>
                     <div class="admin-label" style="margin-top:20px; margin-bottom:10px;">Cards Existentes</div>
                     <div id="admin-card-list" class="avatar-admin-list"></div>
@@ -300,6 +302,7 @@
                             </div>
                         </div>
                         <button id="btn-save-new-avatar" class="battle-btn" style="margin-top:10px;">SALVAR</button>
+                        <p id="admin-status-msg-avatar" style="margin-top: 10px; font-weight: bold;"></p>
                     </div>
                     <div class="admin-label" style="margin-top:20px; margin-bottom:10px;">Avatares Cadastrados</div>
                     <div id="admin-avatar-list" class="avatar-admin-list"></div>

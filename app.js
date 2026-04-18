@@ -1631,6 +1631,7 @@ async function saveNewCard() {
     const file = document.getElementById('admin-card-image').files[0];
     const amount = document.getElementById('admin-card-amount').value;
     const price = document.getElementById('admin-card-price').value;
+    const stripeId = document.getElementById('admin-card-stripe-id').value; // Preparado para Stripe no futuro
     const msg = document.getElementById('admin-status-msg');
 
     if (!file || !amount || !price) {
@@ -1664,10 +1665,13 @@ async function saveNewCard() {
 
         showSuccessPopup("SUCESSO!", "Card foi criado");
         
+        // Aqui futuramente será salvo stripeId: stripeId (quando a coluna "stripe_price_id" existir no Supabase DB)
+        
         // Reset form
         document.getElementById('admin-card-image').value = '';
         document.getElementById('admin-card-amount').value = '';
         document.getElementById('admin-card-price').value = '';
+        document.getElementById('admin-card-stripe-id').value = '';
         
         loadAdminCards();
         setTimeout(() => { msg.textContent = ""; }, 3000);
@@ -1683,7 +1687,11 @@ async function loadAdminCards() {
     list.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Carregando cards...</p>';
 
     const { data, error } = await db.from('shop_cards').select('*').order('created_at', { ascending: false });
-    if (error || !data || data.length === 0) {
+    if (error) {
+        list.innerHTML = `<p style="color:red;font-size:0.85rem;">Erro ao buscar cards: ${error.message}</p>`;
+        return;
+    }
+    if (!data || data.length === 0) {
         list.innerHTML = '<p style="color:#aaa;font-size:0.85rem;">Nenhum card cadastrado ainda.</p>';
         return;
     }
@@ -1741,7 +1749,7 @@ async function loadShop() {
         });
     } catch (err) {
         console.error("Erro ao carregar loja:", err);
-        elShopGrid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 40px;">Erro ao carregar catálogo. Tente novamente.</p>';
+        elShopGrid.innerHTML = `<p style="grid-column: 1/-1; text-align: center; color: #ef4444; padding: 40px;">Erro DB: ${err.message || 'Falha ao carregar catálogo'}</p>`;
     }
 }
 
