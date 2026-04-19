@@ -579,9 +579,10 @@ async function signOut() {
         document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
 
-    // Em vez de location.reload(), usamos o redirecionamento para a raiz
-    // Isso garante que o sistema de rotas do navegador comece do zero
-    location.href = '/';
+    // Em vez de location.href = '/', usamos replace e reload
+    // Isso garante que o sistema limpe o cache de memória do JS e mantenha a URL correta (ex: /index.html)
+    window.history.replaceState({}, document.title, window.location.pathname);
+    window.location.reload();
 }
 
 function showConfirm(title, msg) {
